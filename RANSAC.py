@@ -1,3 +1,6 @@
+#Created by: Nicholas O'Brien
+#Project Sentinel; RANSAC Functions
+#Created: December 7th, 2019
 import numpy as np
 
 #Constants for the RANSAC Process
@@ -21,36 +24,6 @@ def calculateQ(theta, phi):
     r = 59.3179 #mm, physical meaning described in other documents
     q = np.arctan(r*np.cos(theta+phi)/h)
     return(q) #in radians
-
-###################################################################################################################################################################
-#Function: UpdatePosition
-#Purpose: Update the state vector of Sentinel, using information from the wheel encoders and the accelerometer
-#The accelerometer has not been included yet.
-#Inputs:
-    #x, 1xn numpy array representing the state vector of Sentinel. The first three entries are the pose of Sentinel
-    #dt1, a float representing the change in angle (in radians) of wheel 1
-    #dt2, a float representing the change in angle (in radians) of wheel 2
-#Outputs:
-    #x, the updated state vector from Inputs.
-    
-def UpdatePosition(x,dt1,dt2):
-    R = 1 #Radius of the wheels
-    L = 1 #distance between the wheels
-    dt = (R/L)*(dt2-dt1)
-    if dt>=2*np.pi:
-        dt += -2*np.pi
-    elif dt<0:
-        dt += 2*np.pi
-    if dt==0:
-        dx = -R*dt1*np.sin(x[2][0])
-        dy = R*dt1*np.cos(x[2][0])
-    else:
-        dx = (L/2)*(dt2+dt1)/(dt2-dt1)*(np.cos(x[2][0]+dt)-np.cos(x[2][0]))
-        dy = (L/2)*(dt2+dt1)/(dt2-dt1)*(np.sin(x[2][0]+dt)-np.sin(x[2][0]))
-    x[0] += dx
-    x[1] += dy
-    x[2] += dt
-    return(x)
 
 ###################################################################################################################################################################
 #Function: SampleUnassociatedPoints
@@ -122,7 +95,7 @@ def RemovePoints(Unassociated, Associated):
 #Inputs:
     #Sample, a list of points of the format (rho, x, y, z)
 #Outputs:
-    #Betahat, a 1x3 numpy array containing the parameters to the plane, format [[beta1],[beta2],[beta3]]
+    #Betahat, a 3x1 numpy array containing the parameters to the plane, format [[beta1],[beta2],[beta3]]
     #SingularMatrix, a boolean specifying whether or not the Singular Matrix error appeared. Used for deciding whether or not to skip the current sample of points in RANSAC.
 def ExtractLSRP(Sample):
     A = [[]]
@@ -158,15 +131,15 @@ def ExtractLSRP(Sample):
 #Purpose: generate an array of the size of the dict of unassociated points, telling whether or not the points fall within tolerance (X) of the LSRP
 #Inputs:
     #Unassociated_Points, the dictionary of all unassociated points
-    #LSRP, a 1x3 numpy array containing the parameters for a plane, format [[beta1], [beta2], [beta3]]
+    #LSRP, a 3x1 numpy array containing the parameters for a plane, format [[beta1], [beta2], [beta3]]
 #Outputs:
     #Tolerance_Bool, a dictionary with the same keys as Unassociated_Points, whose values are a boolean showing whether or not that point passed tolerance.
     #x, an int specifying how many points from Unassociated_Points passed tolerance.
     
 def TestTolerance(Unassociated_Points, LSRP):
-        beta1 = LSRP[0]
-        beta2 = LSRP[1]
-        beta3 = LSRP[2]
+        beta1 = LSRP[0][0]
+        beta2 = LSRP[1][0]
+        beta3 = LSRP[2][0]
         Tolerance_Bool = {}
         x = 0
         for key in Unassociated_Points:
@@ -183,22 +156,22 @@ def TestTolerance(Unassociated_Points, LSRP):
             if IN_TOLERANCE:
                 x += 1
         return(Tolerance_Bool, x)
-
+    
 ###################################################################################################################################################################
 #Function: LSRPtoLandmark
 #Purpose: Convert the Parameters of the LSRP to a point in space that we can use for the EKF
 #Inputs:
-    #LSRP, a 1x3 numpy array containing the parameters for an LSRP, format [[beta1], [beta2], [beta3]]
+    #LSRP, a 3x1 numpy array containing the parameters for an LSRP, format [[beta1], [beta2], [beta3]]
 #Outputs:
     #Landmark, a numpy array of the coordinates of the point used to represent the LSRP. format [[x_k],[y_k],[z_k]]
 
 def LSRPtoLandmark(LSRP):
-    fixed_point = np.array([[0],[0],[0]])
-    b1 = np.float64(LSRP[0])
-    b2 = np.float64(LSRP[1])
-    b3 = np.float64(LSRP[2])
-    b = b1/(1 + b2**2 + b3**2)
-    normalvec = np.array([[-b2],[-b3],[1]])
+    fixed_point = [[0.0],[0.0],[0.0]]
+    b1 = LSRP[0][0]
+    b2 = LSRP[1][0]
+    b3 = LSRP[2][0]
+    b = np.array(b1/(1 + b2**2 + b3**2))
+    normalvec = [[-b2],[-b3],[1]]
     Landmark = fixed_point + b*normalvec
     return(Landmark)
 
@@ -207,7 +180,7 @@ def LSRPtoLandmark(LSRP):
 #Purpose: to convert a single scan's values into the global csys' cartesian coordinate system, taking into account the robots current pose
 #Inputs:
     #res, a dict from the parser containing scan data
-    #x, a 1xn numpy array, the state vector for our system
+    #x, a nx1 numpy array, the state vector for our system
 #Outputs:
     #scan, a dictionary containing all the points for a single scan, in the global coordinate system.
 #NOTE: this function will have to be restructured when we start to understand how the dataflow
@@ -237,8 +210,8 @@ def ConvertToCartesian(res, x):
                 x_lidar = rho*np.cos(angle)*np.cos(q_0)
                 y_lidar = rho*np.sin(angle)*np.cos(q_90)
                 z_lidar = rho*(np.cos(angle)*np.sin(q_0) + np.sin(angle)*np.sin(q_90))
-                x_global = x_lidar + x[0]
-                y_global = y_lidar + x[1]
+                x_global = x_lidar + x[0][0]
+                y_global = y_lidar + x[1][0]
                 z_global = z_lidar #For now, we assume sentinel does not change altitude. This is also making the global origin at the same height as the LIDAR
                 scan[(angle, q)] = (rho,x_global,y_global,z_global)
             offset += message_count
@@ -322,9 +295,9 @@ def RANSAC(scan, start_angle, end_angle):
 def plotLSRPs(figure, LSRP_list, xmin=-3000, xmax=3000, ymin=-3000, ymax=3000, alpha=0.5):
     xx, yy = np.meshgrid(range(xmin, xmax, 10), range(ymin, ymax, 10))
     for LSRP in LSRP_list:
-        beta1 = LSRP[0]
-        beta2 = LSRP[1]
-        beta3 = LSRP[2]
+        beta1 = LSRP[0][0]
+        beta2 = LSRP[1][0]
+        beta3 = LSRP[2][0]
         zz = beta1 + beta2*xx + beta3*yy
         #plt.hold #This is a deprecated function in more recent releases of matplotlib.pyplot. If the plane overwrites the points, try this.
         figure.plot_surface(xx, yy, zz, alpha=alpha)
