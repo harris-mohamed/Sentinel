@@ -1,8 +1,7 @@
 # Project Sentinel: TiM781 Log File Parser 
 # Harris M 
 # November 24, 2019 
-# please note that this file is meant for testing, it is not the final version of the parser.
-# All content except for the parser function and related have been removed from this file.
+
 # LIBRARIES 
 import re
 import numpy as np
@@ -16,6 +15,10 @@ from scipy import signal
 from skimage.io import imread
 from numpy.random import randn
 from scipy.io import wavfile
+
+# Log file locations 
+single_scan = '../sample_logs/Single_11-19-19.log'
+dynamic_scan = '../sample_logs/Dynamic-sweep_11-26-19.log'
 
 # Global array/variable instantiation
 # Set up formatting for the movie files
@@ -49,7 +52,6 @@ def load_file(file):
         with open(file, "r") as f:
             for line in f:
                 raw_objects.append(line)
-                
         return raw_objects
     except IOError:
         print("Error: Couldn't open the specified log file.")
@@ -298,4 +300,69 @@ def parser(file):
    
 
     return output
-plt.show()
+
+def init():
+    ax.set_xlim(-5000, 5000)
+    ax.set_ylim(-5000, 5000)
+    return ln,
+
+def update(frame):
+    global looper
+    current = res[looper]
+    xdata = []
+    ydata = []
+    current_data = current['Measurement']
+    increment = current['Angular Increment']
+    for message in range(len(current_data)):
+        angle = message * 0.333
+        xdata.append((current_data[message]) * np.cos(np.radians(angle)))
+        ydata.append((current_data[message]) * np.sin(np.radians(angle)))  
+    # ln.set_data(xdata, ydata)
+    ln.set_xdata(xdata)
+    ln.set_ydata(ydata)
+    looper = looper + 1
+    return ln,
+
+if __name__=="__main__":
+    res = parser(dynamic_scan)
+
+    fig, ax = plt.subplots()
+    xdata, ydata = [], []
+    ln, = plt.plot([], [], 'ro')
+
+    # def init():
+    #     ax.set_xlim(0, 2*np.pi)
+    #     ax.set_ylim(-1, 1)
+    #     return ln,
+
+    # def update(frame):
+    #     xdata.append(frame)
+    #     ydata.append(np.sin(frame))
+    #     ln.set_data(xdata, ydata)
+    #     return ln,
+
+    # ani = FuncAnimation(fig, update, frames=np.linspace(0, 2*np.pi, 128),
+    #                     init_func=init, blit=True)
+
+
+    looper = 0
+
+    ani = FuncAnimation(fig, update, frames=np.linspace(-5000, 5000),
+                        init_func=init)
+
+    # graph_x = []
+    # graph_y = []
+
+    # output = res[5]
+
+    # for message in range(output['Message Count']):
+    #     curr = output['Measurement']
+    #     dist = curr[message]
+    #     increment = output['Angular Increment']
+    #     angle = message * 0.333
+    #     graph_x.append((dist/1000) * np.cos(np.radians(angle)))
+    #     graph_y.append((dist/1000) * np.sin(np.radians(angle)))
+        
+
+    # plt.plot(graph_x, graph_y)
+    plt.show()
