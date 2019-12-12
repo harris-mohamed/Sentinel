@@ -280,6 +280,61 @@ def RANSAC(scan, start_angle, end_angle):
     else: print(str(c) + " Unassociated Points are left. This is less than Consensus, "+str(C))
     return(Landmark_LSRPS, LSRP_list)
 ###################################################################################################################################################################
+#Function: PairLSRPs
+#Purpose: pair a newly calculated Landmark with the nearest Approved Landmark, that has been seen more than N_obsmin times
+#Inputs:
+    #Landmarks_New, a list of 3x1 numpy arrays, the point landmarks we have extracted from the previous step
+    #Landmarks_Approved, a dict containing all the Landmarks that have been observed the minimum amount of times
+
+def PairLSRPs(Landmarks_New, Landmarks_Approved):
+    Minimum_Indexes = {}
+    Minimum_Indexes_List = []
+    Minimum_Distances = {}
+    #This block is supposed to calculate the distance of each new landmark from each existing landmark and store it in a dict
+    for key in Landmarks_Approved.keys():
+        Approved = Landmarks_Approved[key]
+        Distances_sub = []
+        for index in range(0, len(Landmarks_New), 1):
+            d = np.linalg.norm(Approved-Landmarks_New[index])
+            Distances_sub.append(d)
+            if index==0:
+                minimum_distance = d
+            elif d<minimum_distance:
+                minimum_distance = d
+                
+        Minimum_Distances[key] = minimum_distance
+        min_index = Distances.index(minimum_distance)
+        Minimum_Indexes[key] = min_index
+
+    #This block is for testing if any new landmarks were simultaneously the closest to multiple approved landmarks.
+    keyslist = []
+    for key1 in Minimum_Indexes.keys():
+        keyslist.append(key1)
+        identical_keys = []
+        for key2 in Minimum_Indexes.keys():
+            if (key1 != key2) and (key2 not in keyslist):
+                if Minimum_Indexes[key1] == Minimum_Indexes[key2]:
+                    if key1 not in identical_keys: identical_keys.append(key1)
+                    if key2 not in identical_keys: identical_keys.append(key2)
+        count = 0
+        while len(identical_keys)>1:
+            for index in range(0, len(identical_keys), 1):
+                d = Minimum_Distance[key]
+                if index==0:
+                    minimum = d
+                    min_index=index
+                elif minimum>d:
+                    minimum=d
+                    min_index=index
+                    #This might be a job for Harris.
+
+    #Given a 2 sets of points, pair the points together based on closest distance. However
+    #Every point can only have one pair. Not every point will have a pairing.                
+        
+        
+        
+    
+###################################################################################################################################################################
 #Function: plotLSRPs
 #Purpose: Plot any LSRP's found by RANSAC on an existing plot of the point cloud. This is only for verification testing.
 #Inputs:
