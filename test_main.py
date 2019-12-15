@@ -16,8 +16,10 @@ import numpy as np
 single_scan = './Logs/Static-sweep_11-26-19.log'
 #single_scan = './Logs/Dynamic-sweep_11-26-19.log'
 #single_scan = './Logs/Sweep2_11-22-19.log'
-x = [[0.0],[0.0],[0.0],[1.0],[1.0],[1.0]]
-dx_sum = [[0.0],[0.0],[0.0]]
+x = [[0.0], [0.0], [0.0], [6.0], [3.0], [1.0]]
+dx_sum = np.zeros((3,1))
+P = np.zeros((6,6))
+Landmark_Positions = {1:3}
 dt1 = 0.0
 dt2 = 0.0 #In reality, these would be grabbed from the Arduino.
 
@@ -41,10 +43,11 @@ for point in scan.values():
     zs.append(point[3])
 
 start = time.time()
-(Landmark_LSRPS, LSRP_list) = RANSAC.RANSAC(scan, start_angle, end_angle)
+(Landmarks_New, LSRP_list) = RANSAC.RANSAC(scan, start_angle, end_angle)
 end = time.time()
-print("RANSAC took "+ str(end-start) + " seconds to process "+ str(message_count) +" points ")
-
+print("RANSAC took "+ str(end-start) + " seconds to process "+ str(message_count) +" points. Now associating new landmarks with current landmarks...")
+Landmark_Pairs = RANSAC.PairLandmarks(Landmarks_New, Landmark_Positions, x, P)
+(x, P) = EKF.EKF(x, dx_sum, P, Landmark_Positions, Landmarks_New, Landmark_Pairs)
 fig = plt.figure()
 ax = Axes3D(fig)
 ax.scatter(xs, ys, zs, s=3, marker='x', color='r')

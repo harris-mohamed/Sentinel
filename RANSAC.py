@@ -232,7 +232,7 @@ def ConvertToCartesian(res, x):
     
 def RANSAC(scan, start_angle, end_angle):
     
-    Landmark_LSRPS = []
+    Landmarks_New = {}
     LSRP_list = []
     Associated_Points = {}
     
@@ -270,7 +270,7 @@ def RANSAC(scan, start_angle, end_angle):
                     if not Error:
                         LSRP_list.append(LSRP) #This line should be removed in the instantiation of SENTINEL, this is only for visualization
                         Landmark = LSRPtoLandmark(LSRP)
-                        Landmark_LSRPS.append(Landmark)
+                        Landmarks_New[n] = Landmark #n is assigned as the key because this dict is erased from each RANSAC run
                         RemovePoints(Unassociated_Points, Associated_Points)
        
         c = len(Unassociated_Points)
@@ -278,55 +278,83 @@ def RANSAC(scan, start_angle, end_angle):
     
     if n==N: print("Trial Limit of "+str(N)+" Reached")
     else: print(str(c) + " Unassociated Points are left. This is less than Consensus, "+str(C))
-    return(Landmark_LSRPS, LSRP_list)
+    return(Landmarks_New, LSRP_list)
 ###################################################################################################################################################################
-#Function: PairLSRPs
+#Function: PairLandmarks
 #Purpose: pair a newly calculated Landmark with the nearest Approved Landmark, that has been seen more than N_obsmin times
 #Inputs:
-    #Landmarks_New, a list of 3x1 numpy arrays, the point landmarks we have extracted from the previous step
-    #Landmarks_Approved, a dict containing all the Landmarks that have been observed the minimum amount of times
-
-def PairLSRPs(Landmarks_New, Landmarks_Approved):
-    Minimum_Indexes = {}
-    Minimum_Indexes_List = []
+    #Landmarks_New, a dict of 3x1 numpy arrays, the point landmarks we have extracted from the previous step
+    #Landmark_Positions, a dict containing the number of times each landmark has been observed and its position in the state vector
+    #x, the state vector
+    #P, the covariance matrix. Only included for updating size.
+#Outputs:
+    #Minimum_Keys, a dict that has its keys being the same as Landmarks_Approved and its values being the associated point from Landmarks_New. This way, there is always a reference between the two points during the EKF.
+def PairLandmarks(Landmarks_New, Landmark_Positions, x, P):
+    multipliers = Landmark_Positions.keys()
+    Landmarks_Approved = {}
+    for multiplier in multipliers:
+        landmark = x[(multiplier*3):((multiplier+1)*3)]
+        Landmarks_Approved[multiplier] = landmark
+    Minimum_Keys = {}
     Minimum_Distances = {}
     #This block is supposed to calculate the distance of each new landmark from each existing landmark and store it in a dict
-    for key in Landmarks_Approved.keys():
-        Approved = Landmarks_Approved[key]
+    for appKey in Landmarks_Approved.keys():
+        Approved = Landmarks_Approved[appKey]
         Distances_sub = []
-        for index in range(0, len(Landmarks_New), 1):
-            d = np.linalg.norm(Approved-Landmarks_New[index])
-            Distances_sub.append(d)
-            if index==0:
+        count = 0
+        for newKey in Landmarks_New.keys():
+            d = np.linalg.norm(Approved-Landmarks_New[newKey])
+            if count==0:
                 minimum_distance = d
+                min_key = newKey
             elif d<minimum_distance:
                 minimum_distance = d
+                min_key = newKey
+            count += 1
                 
-        Minimum_Distances[key] = minimum_distance
-        min_index = Distances.index(minimum_distance)
-        Minimum_Indexes[key] = min_index
+        Minimum_Distances[appKey] = minimum_distance
+        Minimum_Keys[appKey] = min_key
+        print("Observed Landmark "+str(appKey)+" has been paired with new landmark "+str(min_key))
+    if len(Landmark_Positions)==0:
+        print("No previous Landmarks in the database. Adding all new landmarks to the Current State")
+        for New_Landmark in Landmarks_New.values():
+            np.append(x, New_Landmark, 0)
+            x_len = len(x)
+            multiplier = int(x_len/3-1)
+            Landmark_Positions[multiplier] = 1
+            Minimum_Keys[multiplier] = None #This is made None to tell the EKF to skip this landmark. It has already been observed once and has no further value to the algorithm for this frame.
+            P.resize((x_len, x_len)) #This should add rows and columns of zeroes to the matrix while preserving the original matrix contents
+    return(Minimum_Keys)
+#Some problems with the Above:
+    #1. how to handle when a new landmark does not get paired with an approved landmark. It should be appended to the state vector and the Landmark_Positions dict
+    #2. how to handle when there are too many approved landmarks for new landmarks. This algorithm will
+    #   assign each approved landmark with a new landmark, even if that new landmark is shared with another approved landmark.
+    #   Even so, is this a bad thing? Possibly not, the validation gate should in theory take care of that. But, what if it does not?
+    #   Then a new landmark will be interpreted as two different approved landmarks at the same time. this could happen in the case of planes that
+    #   intersect near the fixed point for calculating the point Landmark's coordinates. Even then again: is that a bad thing? More testing needed.
+
 
     #This block is for testing if any new landmarks were simultaneously the closest to multiple approved landmarks.
-    keyslist = []
-    for key1 in Minimum_Indexes.keys():
-        keyslist.append(key1)
-        identical_keys = []
-        for key2 in Minimum_Indexes.keys():
-            if (key1 != key2) and (key2 not in keyslist):
-                if Minimum_Indexes[key1] == Minimum_Indexes[key2]:
-                    if key1 not in identical_keys: identical_keys.append(key1)
-                    if key2 not in identical_keys: identical_keys.append(key2)
-        count = 0
-        while len(identical_keys)>1:
-            for index in range(0, len(identical_keys), 1):
-                d = Minimum_Distance[key]
-                if index==0:
-                    minimum = d
-                    min_index=index
-                elif minimum>d:
-                    minimum=d
-                    min_index=index
-                    #This might be a job for Harris.
+##    keyslist = []
+##    for key1 in Minimum_Indexes.keys():
+##        keyslist.append(key1)
+##        identical_keys = []
+##        for key2 in Minimum_Indexes.keys():
+##            if (key1 != key2) and (key2 not in keyslist):
+##                if Minimum_Indexes[key1] == Minimum_Indexes[key2]:
+##                    if key1 not in identical_keys: identical_keys.append(key1)
+##                    if key2 not in identical_keys: identical_keys.append(key2)
+##        count = 0
+##        while len(identical_keys)>1:
+##            for index in range(0, len(identical_keys), 1):
+##                d = Minimum_Distance[key]
+##                if index==0:
+##                    minimum = d
+##                    min_index=index
+##                elif minimum>d:
+##                    minimum=d
+##                    min_index=index
+##                    #This might be a job for Harris.
 
     #Given a 2 sets of points, pair the points together based on closest distance. However
     #Every point can only have one pair. Not every point will have a pairing.                
