@@ -115,8 +115,7 @@ def ExtractLSRP(Sample):
     AtransA = np.matmul(Atrans,A)
 
     try:
-        AtransAinv = np.linalg.inv(AtransA) #It seems to be somewhat common to get a singular matrix error at this step. It may be just with incorrect test data.
-        Betahat = np.matmul(np.matmul(AtransAinv,Atrans),z)
+        Betahat = np.linalg.solve(AtransA, np.matmul(Atrans, z)) #It seems to be somewhat common to get a singular matrix error at this step. It may be just with incorrect test data.
         SingularMatrix=False
         
     except:
@@ -278,7 +277,7 @@ def RANSAC(scan, start_angle, end_angle):
     
     if n==N: print("Trial Limit of "+str(N)+" Reached")
     else: print(str(c) + " Unassociated Points are left. This is less than Consensus, "+str(C))
-    return(Landmarks_New, LSRP_list)
+    return(Landmarks_New, LSRP_list, Unassociated_Points)
 ###################################################################################################################################################################
 #Function: PairLandmarks
 #Purpose: pair a newly calculated Landmark with the nearest Approved Landmark, that has been seen more than N_obsmin times
