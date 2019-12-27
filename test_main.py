@@ -43,9 +43,10 @@ for point in scan.values():
     zs.append(point[3])
 
 start = time.time()
-(Landmarks_New, LSRP_list) = RANSAC.RANSAC(scan, start_angle, end_angle)
+(Landmarks_New, LSRP_list, Unassociated_Points) = RANSAC.RANSAC(scan, start_angle, end_angle)
 end = time.time()
 print("RANSAC took "+ str(end-start) + " seconds to process "+ str(message_count) +" points. Now associating new landmarks with current landmarks...")
+
 Landmark_Pairs = RANSAC.PairLandmarks(Landmarks_New, Landmark_Positions, x, P)
 (x, P) = EKF.EKF(x, dx_sum, P, Landmark_Positions, Landmarks_New, Landmark_Pairs)
 fig = plt.figure()
