@@ -2,13 +2,17 @@
 #Project Sentinel; RANSAC Functions
 #Created: December 7th, 2019
 import numpy as np
+import time
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 #Constants for the RANSAC Process
-X = 10.0 #The tolerance, how close points must be to the LSRP to be accurately represented by the LSRP, units are mm
+X = 1.0 #The tolerance, how close points must be to the LSRP to be accurately represented by the LSRP, units are mm
 C = 30 #The consensus, how many points must be within tolerance of the LSRP to pass, units are points
-N = 200 #Max number of trials, units are trials
+N = 100 #Max number of trials, units are trials
 S = 10 #The number of points sampled around the initially chosen point
-D = 10 #The number of degrees (angle) from S we are allowing ourselves to sample from, the search area, units are degrees
+D = 5 #The number of degrees (angle) from S we are allowing ourselves to sample from, the search area, units are degrees
+rhofactor = 100 #mm, the radial tolerance that sampled points are allowed to be from the seed point
 Drad = np.radians(D) #convert D to radians
 
 ###################################################################################################################################################################
@@ -26,8 +30,8 @@ def calculateQ(theta, phi):
     return(q) #in radians
 
 ###################################################################################################################################################################
-#Function: SampleUnassociatedPoints
-#Purpose: generate a sample of keys from the Unassociated_Points to use to generate a sample of points for LSRP calculation.
+#Function: SampleUnassociatedPointsAngles
+#Purpose: generate a sample of keys from the Unassociated_Points to use to generate a sample of points for LSRP calculation, using angle increments as selection criteria.
 #Inputs:
     #keys, a list of keys to the dictionary Unassociated_Points. The keys are tuples of the format (phi, q)
     #start_angle, the angle that the scans begin at for the lidar's coordinate system, in radians
@@ -35,7 +39,7 @@ def calculateQ(theta, phi):
 #Outputs:
     #sample, a list of keys for RANSAC. is the length of S or fewer.
     #SKIP, a boolean used to tell RANSAC whether or not to skip the current sample of points. Only used if the sample is not large enough to calculate a plane.
-def SampleUnassociatedPoints(keys, start_angle, end_angle):
+def SampleUnassociatedPointsAngles(keys, start_angle, end_angle):
     SKIP = False
     keylen = len(keys)
     start_angleq = np.radians(-26.565)
@@ -46,6 +50,8 @@ def SampleUnassociatedPoints(keys, start_angle, end_angle):
     lowerboundphi = randPoint[0] - Drad
     upperboundq = randPoint[1] + Drad
     lowerboundq = randPoint[1] - Drad
+    upperboundrho = randPoint[2] + rhofactor
+    lowerboundrho = randPoint[2] - rhofactor
    
     if lowerboundphi < start_angle:
         lowerboundphi = start_angle
@@ -55,20 +61,26 @@ def SampleUnassociatedPoints(keys, start_angle, end_angle):
         upperboundq = end_angleq
     if lowerboundq < start_angleq:
         lowerboundq = start_angleq
+    if lowerboundrho < 0:
+        lowerboundrho = 0
         
     sample = []
     trycount=0
-    while len(sample)<S and trycount<10*S:
+    while len(sample)<S and trycount<100*S:
         indexattempt = int(np.random.randint(0,keylen, 1)) #pick a random index for keys
         #print(keyattempt)
         keyattempt = keys[indexattempt]
+        #Check that the point is within the phi-angle bounds
         phicheck = (keyattempt[0]<upperboundphi and keyattempt[0]>lowerboundphi)
-        qcheck = (keyattempt[1]<upperboundq and keyattempt[1]>lowerboundq)
-        boundcheck = (qcheck and phicheck)
+        #Check that the point is within the q-angle bounds and is not on the same scan-plane as the random point
+        qcheck = (keyattempt[1]<upperboundq and keyattempt[1]>lowerboundq and not np.isclose(keyattempt[1], randPoint[1]))
+        #Check that the point is within the radius bounds
+        rhocheck = (keyattempt[2]<upperboundrho and keyattempt[2]>lowerboundrho)
+        boundcheck = (qcheck and phicheck and rhocheck)
         if (keyattempt not in sample) and boundcheck:
             sample.append(keyattempt)
         trycount+=1
-    if len(sample)<3:
+    if len(sample)<4:
         SKIP = True
     #print(len(sample), trycount)
     return(sample, SKIP)
@@ -139,6 +151,9 @@ def TestTolerance(Unassociated_Points, LSRP):
         beta1 = LSRP[0][0]
         beta2 = LSRP[1][0]
         beta3 = LSRP[2][0]
+        beta = [[1,beta2,beta3]]
+        betanorm = np.linalg.norm(beta)
+        denominator = betanorm**2
         Tolerance_Bool = {}
         x = 0
         for key in Unassociated_Points:
@@ -146,11 +161,12 @@ def TestTolerance(Unassociated_Points, LSRP):
             x0 = point[1]
             y0 = point[2]
             z0 = point[3]
-            numerator = beta1 + beta2*x0 + beta3*y0 - z0
-            denominator = 1 + beta2**2 + beta3**2
+            vector = [[beta1], [x0], [y0]]
+            numerator = np.dot(vector, beta) - z0
             t = numerator/denominator
-            distance = np.sqrt((t*beta2)**2 + (t*beta3)**2 + (t)**2)
-            IN_TOLERANCE = distance<X
+            distance = (t*betanorm)[0][0] ##np.sqrt((t*beta2)**2 + (t*beta3)**2 + (t)**2)
+            IN_TOLERANCE = abs(distance)<X
+##            if distance<0: print("Found a negative distance value")
             Tolerance_Bool[key] = IN_TOLERANCE
             if IN_TOLERANCE:
                 x += 1
@@ -188,23 +204,29 @@ def LSRPtoLandmark(LSRP):
 def ConvertToCartesian(res, x):
     scan = {}
     offset = 0
+    omega = np.pi/3 #radians per second, this variable is the angular frequency of the motor from the video. for testing purposes only.
     for index in range(0, len(res)):
-        
         if len(res[index]['Measurement'])!=0:
+            if index==0:
+                start = res[index]['Time of transmission']
+            message_time = res[index]['Time of transmission']
+            time_since_start = message_time-start
             message_count = res[index]['Message Count']
             #angle_increment = np.radians(res[index]['Angular Increment']) #for when the angle increment value is returned correctly by the parser
-            angle_increment = np.radians(270/811)
+            angle_increment = np.radians(270/message_count)
             start_angle = np.radians(res[index]['Start Angle'])
             range_data = res[index]['Measurement']
             end_angle = start_angle + (message_count-1)*angle_increment
             #theta = GetSensorEncoderData() #for when we have the arduino hooked up to the encoder, make sure it is in radians
-            theta = index #the assignment here is just for visualization
+            theta = omega*time_since_start #the assignment here is just for visualization
             q_0 = calculateQ(theta, 0)
             q_90 = calculateQ(theta, np.pi/2)
             
             for inc in range(0, message_count):
                 angle = start_angle + inc*angle_increment
                 rho = range_data[inc]
+                if rho<1000: #This is an attempt to remove datapoints that are too close to the origin.
+                    continue
                 q = calculateQ(theta, angle)
                 x_lidar = rho*np.cos(angle)*np.cos(q_0)
                 y_lidar = rho*np.sin(angle)*np.cos(q_90)
@@ -212,7 +234,7 @@ def ConvertToCartesian(res, x):
                 x_global = x_lidar + x[0][0]
                 y_global = y_lidar + x[1][0]
                 z_global = z_lidar #For now, we assume sentinel does not change altitude. This is also making the global origin at the same height as the LIDAR
-                scan[(angle, q)] = (rho,x_global,y_global,z_global)
+                scan[(angle, q, rho)] = (rho,x_global,y_global,z_global)
             offset += message_count
         else:
             continue
@@ -335,28 +357,51 @@ def RANSAC(scan, start_angle, end_angle):
     Landmarks_New = {}
     LSRP_list = []
     Associated_Points = {}
-    
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.set_xlim3d(-2000, 2000)
+    ax.set_ylim3d(-2000, 2000)
+    ax.set_zlim3d(-2000, 2000)
+    ax.view_init(45, 45)
     Unassociated_Points = scan #for now, we are black-boxing the function to get the frame data.
     n=0
     c = len(Unassociated_Points)
+    print("#####################################################")
     while c>C and n<N:
+        print("SAMPLE "+str(n))
         UnassociatedKeys = list(Unassociated_Points.keys())
-
-        (Sample_Keys, SKIP) = SampleUnassociatedPoints(UnassociatedKeys, start_angle, end_angle) #Function to return indexes of the sample of points to calculate LSRP
-        
+        samplestart = time.time()
+        (Sample_Keys, SKIP) = SampleUnassociatedPointsAngles(UnassociatedKeys, start_angle, end_angle) #Function to return indexes of the sample of points to calculate LSRP
+        sampleend = time.time()
+        print("It took "+str(sampleend-samplestart)+" seconds to generate a sample of "+str(len(Sample_Keys))+" points")
         if not SKIP:
             Sample_points = [] #collector for Sample points
             for key in Sample_Keys:
                 Sample_points.append(Unassociated_Points[key])
+            xs = []
+            ys = []
+            zs = []
+            for point in Sample_points:
+                xs.append(point[1])
+                ys.append(point[2])
+                zs.append(point[3])
+            ax.scatter(xs, ys, zs, s=1, marker='o', color='r')
+            plt.show(False)
+            start = time.time()
             (LSRP, Error) = ExtractLSRP(Sample_points) #Function to calculate the LSRP from the sampled points
-
+            end = time.time()
             if not Error:
-                print("LSRP Calculated, now testing Unassociated Points against tolerance...")
+                print("Sample LSRP Calculated after "+str(end-start)+" seconds.")
+                start = time.time()
                 (Tolerance_Bool, x) = TestTolerance(Unassociated_Points, LSRP)
-                print(str(x)+" Points were found in tolerance!")
+                end = time.time()
+                print(str(x)+" Points were found in tolerance with the Sample LSRP after "+str(end-start)+" seconds.")
                 
                 if x>C:
-                    print("This Passes the consensus! Now Calculating new LSRP from in tolerance points...")
+                    print("CONSENSUS PASSED: CALCULATING LANDMARK LSRP")
                     InTolerance_Points = []
                     for key in UnassociatedKeys:
                         IN_TOLERANCE = Tolerance_Bool[key]
@@ -365,16 +410,22 @@ def RANSAC(scan, start_angle, end_angle):
                             intolerance_point = Unassociated_Points[key]
                             InTolerance_Points.append(intolerance_point)
                             Associated_Points[key] = intolerance_point
+                    start = time.time()
                     (LSRP, Error) = ExtractLSRP(InTolerance_Points)
-                        
+                    end = time.time()
+                    print("It took "+str(end-start)+" seconds to extract the Landmark LSRP.")
                     if not Error:
                         LSRP_list.append(LSRP) #This line should be removed in the instantiation of SENTINEL, this is only for visualization
                         Landmark = LSRPtoLandmark(LSRP)
                         Landmarks_New[n] = Landmark #n is assigned as the key because this dict is erased from each RANSAC run
                         RemovePoints(Unassociated_Points, Associated_Points)
-       
+                        print("NEW LANDMARK LSRP SUCCESSFULLY STORED. CONTINUING TO NEXT SAMPLE")
+                else:
+                    print("CONSENSUS FAILED: CONTINUING TO NEXT SAMPLE")
+        
         c = len(Unassociated_Points)
         n += 1
+        print("#####################################################")
     
     if n==N: print("Trial Limit of "+str(N)+" Reached")
     else: print(str(c) + " Unassociated Points are left. This is less than Consensus, "+str(C))
