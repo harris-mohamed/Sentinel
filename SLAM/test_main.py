@@ -2,20 +2,24 @@
 #Project Sentinel; main script
 #Created: December 7th, 2019
 #Last Edit: December 8th, 2019
+import sys
+
+sys.path.append("..\\")
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import time
-import RANSAC
-import PARSER
-import EKF
+import RANSAC.RANSAC as RANSAC
+import PARSER.PARSER as PARSER
+import EKF.EKF as EKF
 import numpy as np
 
 # Log file locations 
-#single_scan = './Logs/Static-sweep0_11-26-19.log'
-#single_scan = './Logs/Static-sweep1_11-26-19.log'
-single_scan = './Logs/Static-sweep_11-26-19.log'
-#single_scan = './Logs/Dynamic-sweep_11-26-19.log'
-#single_scan = './Logs/Sweep2_11-22-19.log'
+#single_scan = '../../../Logs/Static-sweep0_11-26-19.log'
+#single_scan = '../../../Logs/Static-sweep1_11-26-19.log'
+single_scan = '../../../Logs/Static-sweep_11-26-19.log'
+#single_scan = '../../../Logs/dynamic_12-26-19_2252.log'
+#single_scan = '../../../Logs/Dynamic-sweep_11-26-19.log'
+#single_scan = '../../../Logs/Sweep2_11-22-19.log'
 x = [[0.0], [0.0], [0.0], [6.0], [3.0], [1.0]]
 dx_sum = np.zeros((3,1))
 P = np.zeros((6,6))
@@ -24,7 +28,8 @@ dt1 = 0.0
 dt2 = 0.0 #In reality, these would be grabbed from the Arduino.
 
 res = PARSER.parser(single_scan)
-
+for i in range(0, len(res)):
+    print(res[i]['Angular Increment'])
 # These are only included so that RANSAC can run its sampling algorithm
 #angle_increment = np.radians(res[index]['Angular Increment']) #for when the angle increment value is returned correctly by the parser
 angle_increment = np.radians(270/811)
