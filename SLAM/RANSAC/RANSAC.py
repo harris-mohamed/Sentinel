@@ -219,66 +219,6 @@ def ConvertToCartesian(res, x):
     return(scan)
 
 ###################################################################################################################################################################
-#Function: RANSAC
-#Purpose: run the RANSAC algorithm on a point cloud to extract LSRP's
-#Inputs:
-    #scan, the dictionary holding the point cloud.
-    #start_angle, the starting measurement angle for the lidar
-    #end_angle, the ending measurement angle for the lidar.
-#Outputs:
-    #Landmark_LSRPS, a list containing the coordinates of each LSRP.
-    #LSRP_List, a list containing the parameters of the LSRP's. This is only for visualisation.
-    
-def RANSAC(scan, start_angle, end_angle):
-    
-    Landmarks_New = {}
-    LSRP_list = []
-    Associated_Points = {}
-    
-    Unassociated_Points = scan #for now, we are black-boxing the function to get the frame data.
-    n=0
-    c = len(Unassociated_Points)
-    while c>C and n<N:
-        UnassociatedKeys = list(Unassociated_Points.keys())
-
-        (Sample_Keys, SKIP) = SampleUnassociatedPoints(UnassociatedKeys, start_angle, end_angle) #Function to return indexes of the sample of points to calculate LSRP
-        
-        if not SKIP:
-            Sample_points = [] #collector for Sample points
-            for key in Sample_Keys:
-                Sample_points.append(Unassociated_Points[key])
-            (LSRP, Error) = ExtractLSRP(Sample_points) #Function to calculate the LSRP from the sampled points
-
-            if not Error:
-                print("LSRP Calculated, now testing Unassociated Points against tolerance...")
-                (Tolerance_Bool, x) = TestTolerance(Unassociated_Points, LSRP)
-                print(str(x)+" Points were found in tolerance!")
-                
-                if x>C:
-                    print("This Passes the consensus! Now Calculating new LSRP from in tolerance points...")
-                    InTolerance_Points = []
-                    for key in UnassociatedKeys:
-                        IN_TOLERANCE = Tolerance_Bool[key]
-                        
-                        if IN_TOLERANCE:
-                            intolerance_point = Unassociated_Points[key]
-                            InTolerance_Points.append(intolerance_point)
-                            Associated_Points[key] = intolerance_point
-                    (LSRP, Error) = ExtractLSRP(InTolerance_Points)
-                        
-                    if not Error:
-                        LSRP_list.append(LSRP) #This line should be removed in the instantiation of SENTINEL, this is only for visualization
-                        Landmark = LSRPtoLandmark(LSRP)
-                        Landmarks_New[n] = Landmark #n is assigned as the key because this dict is erased from each RANSAC run
-                        RemovePoints(Unassociated_Points, Associated_Points)
-       
-        c = len(Unassociated_Points)
-        n += 1
-    
-    if n==N: print("Trial Limit of "+str(N)+" Reached")
-    else: print(str(c) + " Unassociated Points are left. This is less than Consensus, "+str(C))
-    return(Landmarks_New, LSRP_list, Unassociated_Points)
-###################################################################################################################################################################
 #Function: PairLandmarks
 #Purpose: pair a newly calculated Landmark with the nearest Approved Landmark, that has been seen more than N_obsmin times
 #Inputs:
@@ -356,11 +296,7 @@ def PairLandmarks(Landmarks_New, Landmark_Positions, x, P):
 ##                    #This might be a job for Harris.
 
     #Given a 2 sets of points, pair the points together based on closest distance. However
-    #Every point can only have one pair. Not every point will have a pairing.                
-        
-        
-        
-    
+    #Every point can only have one pair. Not every point will have a pairing.
 ###################################################################################################################################################################
 #Function: plotLSRPs
 #Purpose: Plot any LSRP's found by RANSAC on an existing plot of the point cloud. This is only for verification testing.
@@ -383,4 +319,64 @@ def plotLSRPs(figure, LSRP_list, xmin=-3000, xmax=3000, ymin=-3000, ymax=3000, a
         zz = beta1 + beta2*xx + beta3*yy
         #plt.hold #This is a deprecated function in more recent releases of matplotlib.pyplot. If the plane overwrites the points, try this.
         figure.plot_surface(xx, yy, zz, alpha=alpha)
+###################################################################################################################################################################
+#Function: RANSAC
+#Purpose: run the RANSAC algorithm on a point cloud to extract LSRP's
+#Inputs:
+    #scan, the dictionary holding the point cloud.
+    #start_angle, the starting measurement angle for the lidar
+    #end_angle, the ending measurement angle for the lidar.
+#Outputs:
+    #Landmark_LSRPS, a list containing the coordinates of each LSRP.
+    #LSRP_List, a list containing the parameters of the LSRP's. This is only for visualisation.
+    
+def RANSAC(scan, start_angle, end_angle):
+    
+    Landmarks_New = {}
+    LSRP_list = []
+    Associated_Points = {}
+    
+    Unassociated_Points = scan #for now, we are black-boxing the function to get the frame data.
+    n=0
+    c = len(Unassociated_Points)
+    while c>C and n<N:
+        UnassociatedKeys = list(Unassociated_Points.keys())
+
+        (Sample_Keys, SKIP) = SampleUnassociatedPoints(UnassociatedKeys, start_angle, end_angle) #Function to return indexes of the sample of points to calculate LSRP
+        
+        if not SKIP:
+            Sample_points = [] #collector for Sample points
+            for key in Sample_Keys:
+                Sample_points.append(Unassociated_Points[key])
+            (LSRP, Error) = ExtractLSRP(Sample_points) #Function to calculate the LSRP from the sampled points
+
+            if not Error:
+                print("LSRP Calculated, now testing Unassociated Points against tolerance...")
+                (Tolerance_Bool, x) = TestTolerance(Unassociated_Points, LSRP)
+                print(str(x)+" Points were found in tolerance!")
+                
+                if x>C:
+                    print("This Passes the consensus! Now Calculating new LSRP from in tolerance points...")
+                    InTolerance_Points = []
+                    for key in UnassociatedKeys:
+                        IN_TOLERANCE = Tolerance_Bool[key]
+                        
+                        if IN_TOLERANCE:
+                            intolerance_point = Unassociated_Points[key]
+                            InTolerance_Points.append(intolerance_point)
+                            Associated_Points[key] = intolerance_point
+                    (LSRP, Error) = ExtractLSRP(InTolerance_Points)
+                        
+                    if not Error:
+                        LSRP_list.append(LSRP) #This line should be removed in the instantiation of SENTINEL, this is only for visualization
+                        Landmark = LSRPtoLandmark(LSRP)
+                        Landmarks_New[n] = Landmark #n is assigned as the key because this dict is erased from each RANSAC run
+                        RemovePoints(Unassociated_Points, Associated_Points)
+       
+        c = len(Unassociated_Points)
+        n += 1
+    
+    if n==N: print("Trial Limit of "+str(N)+" Reached")
+    else: print(str(c) + " Unassociated Points are left. This is less than Consensus, "+str(C))
+    return(Landmarks_New, LSRP_list, Unassociated_Points)
 ###################################################################################################################################################################
