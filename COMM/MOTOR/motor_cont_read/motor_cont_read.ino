@@ -1,9 +1,9 @@
 /* ----------------------------------------------------------
-       SENTINEL - MOTOR ENCODER SCRIPT
+       SENTINEL - MOTOR ENCODER SCRIPT w/Circular Correction
 
        Harris M
 
-       December 28, 2019
+       December 30, 2019
    ---------------------------------------------------------- */
 
 /* ----------------------------------------------------------
@@ -20,6 +20,10 @@
        GLOBAL ARRAYS/Variables
    ---------------------------------------------------------- */
 long oldPosition  = -999;
+double rev_count;
+double deg;
+const double rev = 360.00;
+const double PPR = 1080.00;  // This is a constant given by the manufacturer. Amazon says this should be 540, but our own testing revealed it is 1080.
 
 /* ----------------------------------------------------------
        ENCODER INSTANTIATION
@@ -32,7 +36,6 @@ void setup() {
     /* ----- UART INIT ----- */
     digitalWrite(LIVE, LOW);
     Serial.begin(115200, SERIAL_8N1);
-//    Serial.setTimeout(UART_TIMEOUT);
     digitalWrite(LIVE, HIGH);
     delay(1000);
     Serial.begin(9600);
@@ -43,11 +46,17 @@ void loop() {
   long newPosition = myEnc.read();
   if (newPosition != oldPosition) {
     oldPosition = newPosition;
-    Serial.print("Raw: ");
-    Serial.print(newPosition);
-    Serial.print(" Revolutions: ");
-    Serial.print(newPosition/1080.00);
-    Serial.print(" Degrees: ");
-    Serial.println((newPosition/1080.00)*360.00);
+    rev_count = newPosition / 1080.00;
+    deg = rev_count * rev;
+
+    if (deg > rev){
+      deg -= 360;
+    }
+
+  Serial.print("Revolutions: ");
+  Serial.print(rev_count);
+  Serial.print(" Degrees: ");
+  Serial.println(deg);
   }
+  
 }
