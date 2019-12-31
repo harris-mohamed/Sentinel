@@ -32,7 +32,7 @@ void setup() {
     /* ----- UART INIT ----- */
     digitalWrite(LIVE, LOW);
     Serial.begin(115200, SERIAL_8N1);
-    Serial.setTimeout(UART_TIMEOUT);
+//    Serial.setTimeout(UART_TIMEOUT);
     digitalWrite(LIVE, HIGH);
     delay(1000);
     Serial.begin(9600);
@@ -46,8 +46,8 @@ void loop() {
     Serial.print("Raw: ");
     Serial.print(newPosition);
     Serial.print(" Revolutions: ");
-    Serial.print(newPosition/540.00);
+    Serial.print(newPosition/1080.00);
     Serial.print(" Degrees: ");
-    Serial.println((newPosition/540.00)*180.00);
+    Serial.println((newPosition/1080.00)*360.00);
   }
 }
