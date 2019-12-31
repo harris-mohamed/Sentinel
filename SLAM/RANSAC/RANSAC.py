@@ -225,8 +225,8 @@ def ConvertToCartesian(res, x):
             for inc in range(0, message_count):
                 angle = start_angle + inc*angle_increment
                 rho = range_data[inc]
-                if rho<1000: #This is an attempt to remove datapoints that are too close to the origin.
-                    continue
+##                if rho<1000: #This is an attempt to remove datapoints that are too close to the origin.
+##                    continue
                 q = calculateQ(theta, angle)
                 x_lidar = rho*np.cos(angle)*np.cos(q_0)
                 y_lidar = rho*np.sin(angle)*np.cos(q_90)
@@ -389,6 +389,7 @@ def RANSAC(scan, start_angle, end_angle):
                 ys.append(point[2])
                 zs.append(point[3])
             ax.scatter(xs, ys, zs, s=1, marker='o', color='r')
+            plt.pause(1)
             plt.show(False)
             start = time.time()
             (LSRP, Error) = ExtractLSRP(Sample_points) #Function to calculate the LSRP from the sampled points
