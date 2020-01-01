@@ -54,7 +54,6 @@ void setup() {
 
     /* ----- EEPROM INIT ----- */ 
     EEPROM_clear();
-    EEPROM_write(4, 0x00);
 }
 
 void loop() {
