@@ -1,14 +1,24 @@
 # Project Sentinel: TiM781 Log File Parser 
 # Harris M 
-# January 1, 2020 
+# November 24, 2019 
 
 # LIBRARIES 
 import re
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider, Button, RadioButtons
+from matplotlib.animation import FuncAnimation
+from matplotlib import animation
+
+
+from scipy import signal
+from skimage.io import imread
+from numpy.random import randn
+from scipy.io import wavfile
 
 # Log file locations 
-single_scan = '../LOGS/Single_11-19-19.log'
-dynamic_scan_12312020 = '../LOGS/dynamic_12-26-19_2252.log'
+single_scan = '../sample_logs/Single_11-19-19.log'
+dynamic_scan = '../sample_logs/Dynamic-sweep_11-26-19.log'
 
 # Global array/variable instantiation
 # Set up formatting for the movie files
@@ -143,6 +153,7 @@ def telegram_parse(msg):
                 'Measurement Frequency': '',
                 'Amount of Encoder': '',
                 '16-bit Channels': '',
+                'Message Count': '',
                 'Scale Factor': '',
                 'Scale Factor Offset': '',
                 'Start Angle': '',
@@ -236,16 +247,16 @@ def telegram_parse(msg):
             counter = counter + 1
         elif (counter == 23):
             increment = concat(message, 1)
-            telegram['Angular Increment'] = type_conv(increment, 'u16') / angle_step
+            telegram['Angular Increment'] = type_conv(offset, 'u16') / angle_step
             counter = counter + 1
         elif (counter == 24):
             count = concat(message, 1)
-            telegram['Quantity'] = type_conv(count, 'u16')
+            telegram['Message Count'] = type_conv(count, 'u16')
             counter = counter + 1
         else: 
             telegram['Measurement'].append(type_conv(concat(message, 1), 'u16'))
             loop = loop + 1 
-            if (loop == telegram['Quantity']):
+            if (loop == telegram['Message Count']):
                 break
                 
     return telegram
@@ -279,6 +290,7 @@ def parser(file):
             elif (fetch == 'Answer'):
                 data = telegram_parse(init[2:]).copy()
                 output.append(data)
+                # print("Parse!")
             elif (fetch == 'Event'):
                 print("Received a dynamic telegram!")
                 data = telegram_parse(init[2:])
@@ -289,12 +301,67 @@ def parser(file):
 
     return output
 
-res = parser(dynamic_scan_12312020)
+def init():
+    ax.set_xlim(-5000, 5000)
+    ax.set_ylim(-5000, 5000)
+    return ln,
 
-count = 0
-for message in res: 
-    print(message)
-    count = count + 1
+def update(frame):
+    global looper
+    current = res[looper]
+    xdata = []
+    ydata = []
+    current_data = current['Measurement']
+    increment = current['Angular Increment']
+    for message in range(len(current_data)):
+        angle = message * 0.333
+        xdata.append((current_data[message]) * np.cos(np.radians(angle)))
+        ydata.append((current_data[message]) * np.sin(np.radians(angle)))  
+    # ln.set_data(xdata, ydata)
+    ln.set_xdata(xdata)
+    ln.set_ydata(ydata)
+    looper = looper + 1
+    return ln,
 
-    if count == 5:
-        break
+if __name__=="__main__":
+    res = parser(dynamic_scan)
+
+    fig, ax = plt.subplots()
+    xdata, ydata = [], []
+    ln, = plt.plot([], [], 'ro')
+
+    def init():
+        ax.set_xlim(0, 2*np.pi)
+        ax.set_ylim(-1, 1)
+        return ln,
+
+    def update(frame):
+        xdata.append(frame)
+        ydata.append(np.sin(frame))
+        ln.set_data(xdata, ydata)
+        return ln,
+
+    ani = FuncAnimation(fig, update, frames=np.linspace(0, 2*np.pi, 128),
+                        init_func=init, blit=True)
+
+
+    looper = 0
+
+    ani = FuncAnimation(fig, update, frames=np.linspace(-5000, 5000),
+                        init_func=init)
+
+    graph_x = []
+    graph_y = []
+
+    output = res[5]
+
+    for message in range(output['Message Count']):
+        curr = output['Measurement']
+        dist = curr[message]
+        increment = output['Angular Increment']
+        angle = message * 0.333
+        graph_x.append((dist/1000) * np.cos(np.radians(angle)))
+        graph_y.append((dist/1000) * np.sin(np.radians(angle)))
+        
+
+    plt.plot(graph_x, graph_y)
