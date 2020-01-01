@@ -64,8 +64,6 @@ void setup() {
 
   long x = (((long)rev_4 << 24) | ((long)rev_3 << 16) | ((long)rev_2 << 8) | (long)rev_1);
   init_val = *(float*)&x;
-  Serial.print("Initial value read: ");
-  Serial.println(init_val, DEC);
 }
 
 void loop() {
@@ -87,16 +85,12 @@ void loop() {
    
     double angle = angle_calc(rev_count);
 
-    byte* pointer = (byte*)&rev_count;
-    EEPROM_write(index_one, pointer[index_one]);
-    EEPROM_write(index_two, pointer[index_two]);
-    EEPROM_write(index_three, pointer[index_three]);
-    EEPROM_write(index_four, pointer[index_four]);
+    byte* byte_split = (byte*)&rev_count;
+    EEPROM_write(index_one, byte_split[index_one]);
+    EEPROM_write(index_two, byte_split[index_two]);
+    EEPROM_write(index_three, byte_split[index_three]);
+    EEPROM_write(index_four, byte_split[index_four]);
 
-    Serial.print("Revolutions: ");
-    Serial.print(rev_count);
-    Serial.print(" Degrees: ");
-    Serial.println(angle);
   }
 
 }

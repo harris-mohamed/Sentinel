@@ -83,6 +83,7 @@ void EEPROM_clear(){
     }
 
     Serial.println("EEPROM CLEAR successful");
+    Serial.println("Motor calibration complete.");
 }
 
 /* ----------------------------------------------------------
