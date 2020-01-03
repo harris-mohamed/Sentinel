@@ -33,6 +33,7 @@ const int index_two = 1;
 const int index_three = 2;
 const int index_four = 3;
 const int index_flag = 4;
+unsigned long t;
 
 /* ----------------------------------------------------------
        ENCODER INSTANTIATION
@@ -68,6 +69,7 @@ void setup() {
 
 void loop() {
   float newPosition = myEnc.read();
+  t = millis();
   if (newPosition != oldPosition) {
     oldPosition = newPosition;
     
@@ -90,7 +92,9 @@ void loop() {
     EEPROM_write(index_two, byte_split[index_two]);
     EEPROM_write(index_three, byte_split[index_three]);
     EEPROM_write(index_four, byte_split[index_four]);
-
+    Serial.print(t);
+    Serial.print(": ");
+    Serial.println(angle); 
   }
 
 }
