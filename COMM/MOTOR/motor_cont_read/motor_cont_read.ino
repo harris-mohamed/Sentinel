@@ -20,7 +20,6 @@
        GLOBAL ARRAYS/Variables
    ---------------------------------------------------------- */
 long oldPosition  = -999;
-double rev_count;
 double deg;
 const double rev = 360.00;
 const double PPR = 1080.00;  // This is a constant given by the manufacturer. Amazon says this should be 540, but our own testing revealed it is 1080.
@@ -46,7 +45,7 @@ void loop() {
   long newPosition = myEnc.read();
   if (newPosition != oldPosition) {
     oldPosition = newPosition;
-    rev_count = newPosition / 1080.00;
+    double rev_count = newPosition / 1080.00;
     deg = rev_count * rev;
 
     if (deg > rev){
