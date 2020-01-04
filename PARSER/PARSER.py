@@ -12,7 +12,6 @@ dynamic_scan_12312020 = '../LOGS/dynamic_12-26-19_2252.log'
 
 # Global array/variable instantiation
 # Set up formatting for the movie files
-# Writer = animation.FFMpegWriter(fps=20, metadata=dict(artist='Me'), bitrate=1800)
 
 # Constants and look-up tables as defined by SICK 
 microsecond = 10**(-6)
@@ -289,12 +288,4 @@ def parser(file):
 
     return output
 
-res = parser(dynamic_scan_12312020)
-
-count = 0
-for message in res: 
-    print(message)
-    count = count + 1
-
-    if count == 5:
-        break
+# res = parser(dynamic_scan_12312020)
