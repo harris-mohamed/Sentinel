@@ -114,9 +114,9 @@ def ExtractLSRP(Sample):
     z = [[]]
 
     for point in Sample:
-        x = np.float64(point[1])
-        y = np.float64(point[2])
-        zp = np.float64(point[3])
+        x = np.float64(point[0])
+        y = np.float64(point[1])
+        zp = np.float64(point[2])
         if point is Sample[0]:
             A = [[1,x,y]]
             z = [[zp]]
@@ -158,9 +158,9 @@ def TestTolerance(Unassociated_Points, LSRP):
         x = 0
         for key in Unassociated_Points:
             point = Unassociated_Points[key]
-            x0 = point[1]
-            y0 = point[2]
-            z0 = point[3]
+            x0 = point[0]
+            y0 = point[1]
+            z0 = point[2]
             vector = [[beta1], [x0], [y0]]
             numerator = np.dot(vector, beta) - z0
             t = numerator/denominator
@@ -234,7 +234,7 @@ def ConvertToCartesian(res, x=[[0.0],[0.0],[0.0]]):
                 x_global = x_lidar + x[0][0]
                 y_global = y_lidar + x[1][0]
                 z_global = z_lidar #For now, we assume sentinel does not change altitude. This is also making the global origin at the same height as the LIDAR
-                scan[(angle, q, rho)] = (rho,x_global,y_global,z_global)
+                scan[(angle, q, rho)] = (x_global,y_global,z_global)
             offset += message_count
         else:
             continue
@@ -385,9 +385,9 @@ def RANSAC(scan, start_angle, end_angle):
             ys = []
             zs = []
             for point in Sample_points:
-                xs.append(point[1])
-                ys.append(point[2])
-                zs.append(point[3])
+                xs.append(point[0])
+                ys.append(point[1])
+                zs.append(point[2])
             ax.scatter(xs, ys, zs, s=1, marker='o', color='r')
             plt.pause(1)
             plt.show(False)
