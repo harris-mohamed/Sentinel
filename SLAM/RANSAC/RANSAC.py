@@ -201,7 +201,7 @@ def LSRPtoLandmark(LSRP):
 #NOTE: this function will have to be restructured when we start to understand how the dataflow
 # from the LIDAR will look on the raspberry pi. For now, we assume we get a list of dictionaries for a frame.
 # In reality, we expect to get a steady stream of new dicts every few hundredths of a second.
-def ConvertToCartesian(res, x):
+def ConvertToCartesian(res, x=[[0.0],[0.0],[0.0]]):
     scan = {}
     offset = 0
 ##    omega = np.pi/3 #radians per second, this variable is the angular frequency of the motor from the video. for testing purposes only.
@@ -212,7 +212,7 @@ def ConvertToCartesian(res, x):
 ##            message_time = res[index]['Time of transmission']
 ##            time_since_start = message_time-start
             message_count = res[index]['Message Count']
-            angle_increment = np.radians(res[index]['Angular Increment']
+            angle_increment = np.radians(res[index]['Angular Increment'])
             start_angle = np.radians(res[index]['Start Angle'])
             range_data = res[index]['Measurement']
             end_angle = start_angle + (message_count-1)*angle_increment
