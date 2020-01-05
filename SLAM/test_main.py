@@ -41,10 +41,10 @@ while i<lenres:
         lenres = len(res)
     else:
         i += 1
-angle_increment = np.radians(270/811)
-message_count = res[-1]['Message Count']
-start_angle = np.radians(res[-1]['Start Angle'])
-end_angle = start_angle + (message_count-1)*angle_increment
+##angle_increment = np.radians(270/811)
+##message_count = res[-1]['Message Count']
+##start_angle = np.radians(res[-1]['Start Angle'])
+##end_angle = start_angle + (message_count-1)*angle_increment
 print("The scan has been cleaned, now updating odometry...")
 (x, dx_sum) = EKF.UpdatePosition(x, dx_sum, dt1, dt2)
 scan = RANSAC.ConvertToCartesian(res, x)
