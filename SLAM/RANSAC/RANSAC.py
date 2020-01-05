@@ -204,21 +204,21 @@ def LSRPtoLandmark(LSRP):
 def ConvertToCartesian(res, x):
     scan = {}
     offset = 0
-    omega = np.pi/3 #radians per second, this variable is the angular frequency of the motor from the video. for testing purposes only.
+##    omega = np.pi/3 #radians per second, this variable is the angular frequency of the motor from the video. for testing purposes only.
     for index in range(0, len(res)):
         if len(res[index]['Measurement'])!=0:
-            if index==0:
-                start = res[index]['Time of transmission']
-            message_time = res[index]['Time of transmission']
-            time_since_start = message_time-start
+##            if index==0:
+##                start = res[index]['Time of transmission']
+##            message_time = res[index]['Time of transmission']
+##            time_since_start = message_time-start
             message_count = res[index]['Message Count']
-            #angle_increment = np.radians(res[index]['Angular Increment']) #for when the angle increment value is returned correctly by the parser
-            angle_increment = np.radians(270/message_count)
+            angle_increment = np.radians(res[index]['Angular Increment']
             start_angle = np.radians(res[index]['Start Angle'])
             range_data = res[index]['Measurement']
             end_angle = start_angle + (message_count-1)*angle_increment
-            #theta = GetSensorEncoderData() #for when we have the arduino hooked up to the encoder, make sure it is in radians
-            theta = omega*time_since_start #the assignment here is just for visualization
+##            theta = GetSensorEncoderData() #for when we have the arduino hooked up to the encoder, make sure it is in radians
+##            theta = omega*time_since_start #the assignment here is just for visualization
+            theta = res[index]['Motor encoder']
             q_0 = calculateQ(theta, 0)
             q_90 = calculateQ(theta, np.pi/2)
             
