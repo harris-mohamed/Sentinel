@@ -33,15 +33,17 @@ def angle_parser(file):
 # Function: Angle/LIDAR merger
 # Description: Appropriately truncates and then merges angle data and a LIDAR scan
 def merge(angles, lidar):
-    print("Angles before: ", len(angles))
-    print("LIDAR before: ", len(lidar))
     if len(angles) > len(lidar):
-        angles = angles[:len(angles) - len(lidar)]
+        angles = angles[:len(lidar)]
     elif len(lidar) > len(angles):
-        lidar = lidar[:len(lidar) - len(angles)]
-    print("Angles after: ", len(angles))
-    print("LIDAR after: ", len(lidar))
-    
+        lidar = lidar[:len(angles)]
 
-# test_angle = angle_parser(angle_4)
-test_merge = merge(angle_parser(angle_4), lidar_4)
+    for message in range(len(lidar)):
+        curr = lidar[message]
+        curr['Motor encoder'] = angles[message]
+    
+    return lidar
+    
+merge_4 = merge(angle_parser(angle_4), lidar_p4)
+merge_5 = merge(angle_parser(angle_5), lidar_p5)
+merge_6 = merge(angle_parser(angle_6), lidar_p6)
