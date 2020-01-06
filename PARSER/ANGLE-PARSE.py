@@ -5,7 +5,14 @@
 # LIBRARIES 
 import re
 import numpy as np
+import sys
 import PARSER as lidar_parser  
+
+# EXTERNAL PATHS
+sys.path.append('../SLAM/RANSAC')
+
+# EXTERNAL LIBRARIES
+import RANSAC as ransac
 
 # Move the logs outside the version controlled files, then updates the paths below
 lidar_4 = '../../sample_logs/attempt-4-lidar.log'
@@ -43,7 +50,6 @@ def merge(angles, lidar):
 
     for message in lidar:
         curr_lidar_time = float(message['Time since start-up']) - start_l
-        print(curr_lidar_time)
         curr_min = 99999
         min_angle = 99999
         for angle in angles: 
@@ -58,7 +64,11 @@ def merge(angles, lidar):
         
     return lidar
     
-# merge_4 = merge(angle_parser(angle_4), lidar_p4)
+merge_4 = merge(angle_parser(angle_4), lidar_p4)
+
+coor = []
+coor.append(ransac.ConvertToCartesian(merge_4))
+
 # merge_5 = merge(angle_parser(angle_5), lidar_p5)
 # merge_6 = merge(angle_parser(angle_6), lidar_p6)
 
