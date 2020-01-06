@@ -60,7 +60,7 @@ def merge(angles, lidar):
                 curr_min = calc
                 min_angle = curr_angle[1]
             
-        message['Motor encoder'] = min_angle
+        message['Motor encoder'] = float(min_angle)
         
     return lidar
     
