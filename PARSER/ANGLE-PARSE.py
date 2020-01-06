@@ -7,6 +7,7 @@ import re
 import numpy as np
 import PARSER as lidar_parser  
 
+# Move the logs outside the version controlled files, then updates the paths below
 lidar_4 = '../../sample_logs/attempt-4-lidar.log'
 angle_4 = '../../sample_logs/attempt-4.log'
 lidar_5 = '../../sample_logs/attempt-5-lidar.log'
@@ -33,17 +34,31 @@ def angle_parser(file):
 # Function: Angle/LIDAR merger
 # Description: Appropriately truncates and then merges angle data and a LIDAR scan
 def merge(angles, lidar):
-    if len(angles) > len(lidar):
-        angles = angles[:len(lidar)]
-    elif len(lidar) > len(angles):
-        lidar = lidar[:len(angles)]
+    angles = angles[1:]
+    start_angle = angles[0]
+    start_angle = start_angle.split(':')
+    start_a = start_angle[0]
+    lidar_init = lidar[0]
+    start_l = float(lidar_init['Time since start-up'])
 
-    for message in range(len(lidar)):
-        curr = lidar[message]
-        curr['Motor encoder'] = angles[message]
-    
+    for message in lidar:
+        curr_lidar_time = float(message['Time since start-up']) - start_l
+        print(curr_lidar_time)
+        curr_min = 99999
+        min_angle = 99999
+        for angle in angles: 
+            curr_angle = angle.split(':')
+            curr_angle_time = (float(curr_angle[0]) - float(start_a)) * (10**(-3))
+            calc = abs(curr_lidar_time - curr_angle_time)
+            if (calc < curr_min):
+                curr_min = calc
+                min_angle = curr_angle[1]
+            
+        message['Motor encoder'] = min_angle
+        
     return lidar
     
-merge_4 = merge(angle_parser(angle_4), lidar_p4)
-merge_5 = merge(angle_parser(angle_5), lidar_p5)
-merge_6 = merge(angle_parser(angle_6), lidar_p6)
+# merge_4 = merge(angle_parser(angle_4), lidar_p4)
+# merge_5 = merge(angle_parser(angle_5), lidar_p5)
+# merge_6 = merge(angle_parser(angle_6), lidar_p6)
+
