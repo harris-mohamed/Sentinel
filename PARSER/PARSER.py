@@ -278,11 +278,19 @@ def parser(file):
                 if (init[-1] == ''):                        # I had to add these two lines to deal with lidar_5. Not sure why.
                     init = init[:-1]
                 data = telegram_parse(init[2:]).copy()
-                output.append(data)
+
+                if (data['Serial Number'] == ''):
+                    continue
+                else:
+                    output.append(data)
             elif (fetch == 'Event'):
                 print("Received a dynamic telegram!")
                 data = telegram_parse(init[2:])
-                output.append(data)
+                
+                if (data['Serial Number'] == ''):
+                    continue
+                else:
+                    output.append(data)
             else:
                 print("Parsing this type of message is not supported yet.")
    
