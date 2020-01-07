@@ -218,7 +218,7 @@ def ConvertToCartesian(res, x=[[0.0],[0.0],[0.0]]):
             end_angle = start_angle + (message_count-1)*angle_increment
 ##            theta = GetSensorEncoderData() #for when we have the arduino hooked up to the encoder, make sure it is in radians
 ##            theta = omega*time_since_start #the assignment here is just for visualization
-            theta = res[index]['Motor encoder']
+            theta = np.radians(res[index]['Motor encoder'])
             q_0 = calculateQ(theta, 0)
             q_90 = calculateQ(theta, np.pi/2)
             
