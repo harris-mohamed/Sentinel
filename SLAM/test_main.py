@@ -12,14 +12,23 @@ import RANSAC.RANSAC as RANSAC
 import PARSER.PARSER as PARSER
 import EKF.EKF as EKF
 import numpy as np
+import PARSER.ANGLEPARSE as ANGLEPARSE
 
 # Log file locations 
-#single_scan = '../../../Logs/Static-sweep0_11-26-19.log'
-#single_scan = '../../../Logs/Static-sweep1_11-26-19.log'
-##single_scan = '../../../Logs/Static-sweep_11-26-19.log'
-single_scan = '../../../Logs/dynamic_12-26-19_2252.log'
-#single_scan = '../../../Logs/Dynamic-sweep_11-26-19.log'
-#single_scan = '../../../Logs/Sweep2_11-22-19.log'
+#single_scan = '../../sample_logs/Static-sweep0_11-26-19.log'
+#single_scan = '../../sample_logs/Static-sweep1_11-26-19.log'
+##single_scan = '../../sample_logs/Static-sweep_11-26-19.log'
+##single_scan = '../../sample_logs/dynamic_12-26-19_2252.log'
+#single_scan = '../../sample_logs/Dynamic-sweep_11-26-19.log'
+#single_scan = '../../sample_logs/Sweep2_11-22-19.log'
+lidar_4 = '../../sample_logs/attempt-4-lidar.log'
+angle_4 = '../../sample_logs/attempt-4.log'
+lidar_5 = '../../sample_logs/attempt-5-lidar.log'
+angle_5 = '../../sample_logs/attempt-5.log'
+lidar_6 = '../../sample_logs/attempt-6-lidar.log'
+angle_6 = '../../sample_logs/attempt-6.log'
+
+
 x = [[0.0], [0.0], [0.0], [6.0], [3.0], [1.0]]
 dx_sum = np.zeros((3,1))
 P = np.zeros((6,6))
@@ -27,7 +36,16 @@ Landmark_Positions = {1:3}
 dt1 = 0.0
 dt2 = 0.0 #In reality, these would be grabbed from the Arduino.
 
-res = PARSER.parser(single_scan)
+##res = PARSER.parser(lidar_4)
+lidar_p4 = PARSER.parser(lidar_4)
+lidar_p5 = PARSER.parser(lidar_5)
+lidar_p6 = PARSER.parser(lidar_6)
+
+angle_p4 = ANGLEPARSE.angle_parser(angle_4)
+angle_p5 = ANGLEPARSE.angle_parser(angle_5)
+angle_p6 = ANGLEPARSE.angle_parser(angle_6)
+
+res = ANGLEPARSE.merge(angle_p4,lidar_p4) #This line takes the angle values and merges them with the lidar values.
 i=0
 lenres = len(res)
 print("Successfully parsed the scan! Now removing empty messages...")
@@ -55,26 +73,26 @@ xs = []
 ys = []
 zs = []
 for point in scan.values():
-    xs.append(point[1])
-    ys.append(point[2])
-    zs.append(point[3])
-start = time.time()
-(Landmarks_New, LSRP_list, Unassociated_Points) = RANSAC.RANSAC(scan, start_angle, end_angle)
-end = time.time()
-print("RANSAC took "+ str(end-start) + " seconds to process "+ str(len(scan))+" out of "+str(lenscan) +" points, extracting "+str(len(LSRP_list))+" Landmarks. Now associating new landmarks with current landmarks...")
-
-Landmark_Pairs = RANSAC.PairLandmarks(Landmarks_New, Landmark_Positions, x, P)
-(x, P) = EKF.EKF(x, dx_sum, P, Landmark_Positions, Landmarks_New, Landmark_Pairs)
-print("Plotting Points and Landmarks...")
-fig = plt.figure()
-ax = Axes3D(fig)
-ax.scatter(xs, ys, zs, s=1, marker='o', color='r')
-ax.set_xlabel('X')
-ax.set_ylabel('Y')
-ax.set_zlabel('Z')
-##ax.set_xlim3d(-2000, 2000)
-##ax.set_ylim3d(-2000, 2000)
-##ax.set_zlim3d(-2000, 2000)
-RANSAC.plotLSRPs(ax, LSRP_list, ymax=7000)
-ax.view_init(45, 45)
-plt.show()
+    xs.append(point[0])
+    ys.append(point[1])
+    zs.append(point[2])
+##start = time.time()
+##(Landmarks_New, LSRP_list, Unassociated_Points) = RANSAC.RANSAC(scan, start_angle, end_angle)
+##end = time.time()
+##print("RANSAC took "+ str(end-start) + " seconds to process "+ str(len(scan))+" out of "+str(lenscan) +" points, extracting "+str(len(LSRP_list))+" Landmarks. Now associating new landmarks with current landmarks...")
+##
+##Landmark_Pairs = RANSAC.PairLandmarks(Landmarks_New, Landmark_Positions, x, P)
+##(x, P) = EKF.EKF(x, dx_sum, P, Landmark_Positions, Landmarks_New, Landmark_Pairs)
+##print("Plotting Points and Landmarks...")
+##fig = plt.figure()
+##ax = Axes3D(fig)
+##ax.scatter(xs, ys, zs, s=1, marker='o', color='r')
+##ax.set_xlabel('X')
+##ax.set_ylabel('Y')
+##ax.set_zlabel('Z')
+####ax.set_xlim3d(-2000, 2000)
+####ax.set_ylim3d(-2000, 2000)
+####ax.set_zlim3d(-2000, 2000)
+##RANSAC.plotLSRPs(ax, LSRP_list, ymax=7000)
+##ax.view_init(45, 45)
+##plt.show()
