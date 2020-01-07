@@ -7,13 +7,11 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 #Constants for the RANSAC Process
-X = 1.0 #The tolerance, how close points must be to the LSRP to be accurately represented by the LSRP, units are mm
-C = 30 #The consensus, how many points must be within tolerance of the LSRP to pass, units are points
-N = 100 #Max number of trials, units are trials
-S = 10 #The number of points sampled around the initially chosen point
-D = 5 #The number of degrees (angle) from S we are allowing ourselves to sample from, the search area, units are degrees
-rhofactor = 100 #mm, the radial tolerance that sampled points are allowed to be from the seed point
-Drad = np.radians(D) #convert D to radians
+X = 100.0 #The tolerance, how close points must be to the LSRP to be accurately represented by the LSRP, units are mm
+C = 75 #The consensus, how many points must be within tolerance of the LSRP to pass, units are points
+N = 50 #Max number of trials, units are trials
+S = 50 #The number of points sampled around the initially chosen point
+BOX = 1000 #mm, the dimensions of a box made to surround a randomly selected point for RANSAC
 
 ###################################################################################################################################################################
 #Function: calculateQ
@@ -29,56 +27,43 @@ def calculateQ(theta, phi):
     q = np.arctan(r*np.cos(theta+phi)/h)
     return(q) #in radians
 
+
 ###################################################################################################################################################################
 #Function: SampleUnassociatedPointsAngles
 #Purpose: generate a sample of keys from the Unassociated_Points to use to generate a sample of points for LSRP calculation, using angle increments as selection criteria.
 #Inputs:
-    #keys, a list of keys to the dictionary Unassociated_Points. The keys are tuples of the format (phi, q)
-    #start_angle, the angle that the scans begin at for the lidar's coordinate system, in radians
-    #end_angle, the angle that the scans end at for the lidar's coordinate system, in radians.
+    #values, a list of values to the dictionary Unassociated_Points. The keys are tuples of the format (X, Y, Z)
 #Outputs:
     #sample, a list of keys for RANSAC. is the length of S or fewer.
     #SKIP, a boolean used to tell RANSAC whether or not to skip the current sample of points. Only used if the sample is not large enough to calculate a plane.
-def SampleUnassociatedPointsAngles(keys, start_angle, end_angle):
+def SampleUnassociatedPointsCartesian(values):
     SKIP = False
-    keylen = len(keys)
-    start_angleq = np.radians(-26.565)
-    end_angleq = np.radians(26.565) #this is the value of the max q angle that the mechanism can achieve with the values of h and r 
-    randIndex = int(np.random.randint(0, keylen, 1)) #This selects a tuple from the keys list, holding the angle for phi and q for a specific point
-    randPoint = keys[randIndex]
-    upperboundphi = randPoint[0] + Drad
-    lowerboundphi = randPoint[0] - Drad
-    upperboundq = randPoint[1] + Drad
-    lowerboundq = randPoint[1] - Drad
-    upperboundrho = randPoint[2] + rhofactor
-    lowerboundrho = randPoint[2] - rhofactor
-   
-    if lowerboundphi < start_angle:
-        lowerboundphi = start_angle
-    if upperboundphi > end_angle:
-        upperboundphi = end_angle
-    if upperboundq > end_angleq:
-        upperboundq = end_angleq
-    if lowerboundq < start_angleq:
-        lowerboundq = start_angleq
-    if lowerboundrho < 0:
-        lowerboundrho = 0
+    valuelen = len(values)
+    randIndex = int(np.random.randint(0, valuelen, 1)) #This selects a tuple from the keys list, holding the Cartesian coordinates for a point
+    randPoint = values[randIndex]
+    print("Point with following coordinates has been chosen: " +str(randPoint))
+    upperboundX = randPoint[0] + BOX
+    lowerboundX = randPoint[0] - BOX
+    upperboundY = randPoint[1] + BOX    
+    lowerboundY = randPoint[1] - BOX
+    upperboundZ = randPoint[2] + BOX
+    lowerboundZ = randPoint[2] - BOX
         
     sample = []
     trycount=0
     while len(sample)<S and trycount<100*S:
-        indexattempt = int(np.random.randint(0,keylen, 1)) #pick a random index for keys
+        indexattempt = int(np.random.randint(0,valuelen, 1)) #pick a random index for keys
         #print(keyattempt)
-        keyattempt = keys[indexattempt]
+        valueattempt = values[indexattempt]
         #Check that the point is within the phi-angle bounds
-        phicheck = (keyattempt[0]<upperboundphi and keyattempt[0]>lowerboundphi)
+        Xcheck = (valueattempt[0]<upperboundX and valueattempt[0]>lowerboundX)
         #Check that the point is within the q-angle bounds and is not on the same scan-plane as the random point
-        qcheck = (keyattempt[1]<upperboundq and keyattempt[1]>lowerboundq and not np.isclose(keyattempt[1], randPoint[1]))
+        Ycheck = (valueattempt[1]<upperboundY and valueattempt[1]>lowerboundY)
         #Check that the point is within the radius bounds
-        rhocheck = (keyattempt[2]<upperboundrho and keyattempt[2]>lowerboundrho)
-        boundcheck = (qcheck and phicheck and rhocheck)
-        if (keyattempt not in sample) and boundcheck:
-            sample.append(keyattempt)
+        Zcheck = (valueattempt[2]<upperboundZ and valueattempt[2]>lowerboundZ)
+        boundcheck = (Xcheck and Ycheck and Zcheck)
+        if (valueattempt not in sample) and boundcheck:
+            sample.append(valueattempt)
         trycount+=1
     if len(sample)<4:
         SKIP = True
@@ -221,12 +206,12 @@ def ConvertToCartesian(res, x=[[0.0],[0.0],[0.0]]):
             theta = np.radians(res[index]['Motor encoder'])
             q_0 = calculateQ(theta, 0)
             q_90 = calculateQ(theta, np.pi/2)
-            
+##            print("Index is "+str(index))
             for inc in range(0, message_count):
                 angle = start_angle + inc*angle_increment
                 rho = range_data[inc]
-##                if rho<1000: #This is an attempt to remove datapoints that are too close to the origin.
-##                    continue
+                if rho<1000: #This is an attempt to remove datapoints that are too close to the origin.
+                    continue
                 q = calculateQ(theta, angle)
                 x_lidar = rho*np.cos(angle)*np.cos(q_0)
                 y_lidar = rho*np.sin(angle)*np.cos(q_90)
@@ -352,20 +337,20 @@ def plotLSRPs(figure, LSRP_list, xmin=-3000, xmax=3000, ymin=-3000, ymax=3000, a
     #Landmark_LSRPS, a list containing the coordinates of each LSRP.
     #LSRP_List, a list containing the parameters of the LSRP's. This is only for visualisation.
     
-def RANSAC(scan, start_angle, end_angle):
+def RANSAC(scan):
     
     Landmarks_New = {}
     LSRP_list = []
     Associated_Points = {}
-    fig = plt.figure()
-    ax = Axes3D(fig)
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    ax.set_xlim3d(-2000, 2000)
-    ax.set_ylim3d(-2000, 2000)
-    ax.set_zlim3d(-2000, 2000)
-    ax.view_init(45, 45)
+##    fig = plt.figure()
+##    ax = Axes3D(fig)
+##    ax.set_xlabel('X')
+##    ax.set_ylabel('Y')
+##    ax.set_zlabel('Z')
+##    ax.set_xlim3d(-2000, 2000)
+##    ax.set_ylim3d(-2000, 2000)
+##    ax.set_zlim3d(-2000, 2000)
+##    ax.view_init(45, 45)
     Unassociated_Points = scan #for now, we are black-boxing the function to get the frame data.
     n=0
     c = len(Unassociated_Points)
@@ -373,24 +358,25 @@ def RANSAC(scan, start_angle, end_angle):
     while c>C and n<N:
         print("SAMPLE "+str(n))
         UnassociatedKeys = list(Unassociated_Points.keys())
+        UnassociatedValues = list(Unassociated_Points.values())
         samplestart = time.time()
-        (Sample_Keys, SKIP) = SampleUnassociatedPointsAngles(UnassociatedKeys, start_angle, end_angle) #Function to return indexes of the sample of points to calculate LSRP
+        (Sample_points, SKIP) = SampleUnassociatedPointsCartesian(UnassociatedValues) #Function to return indexes of the sample of points to calculate LSRP
         sampleend = time.time()
-        print("It took "+str(sampleend-samplestart)+" seconds to generate a sample of "+str(len(Sample_Keys))+" points")
+        print("It took "+str(sampleend-samplestart)+" seconds to generate a sample of "+str(len(Sample_points))+" points")
         if not SKIP:
-            Sample_points = [] #collector for Sample points
-            for key in Sample_Keys:
-                Sample_points.append(Unassociated_Points[key])
-            xs = []
-            ys = []
-            zs = []
-            for point in Sample_points:
-                xs.append(point[0])
-                ys.append(point[1])
-                zs.append(point[2])
-            ax.scatter(xs, ys, zs, s=1, marker='o', color='r')
-            plt.pause(1)
-            plt.show(False)
+##            Sample_points = [] #collector for Sample points
+##            for key in Sample_Keys:
+##                Sample_points.append(Unassociated_Points[key])
+##            xs = []
+##            ys = []
+##            zs = []
+##            for point in Sample_points:
+##                xs.append(point[0])
+##                ys.append(point[1])
+##                zs.append(point[2])
+##            ax.scatter(xs, ys, zs, s=1, marker='o', color='r')
+##            plt.pause(1)
+##            plt.show(False)
             start = time.time()
             (LSRP, Error) = ExtractLSRP(Sample_points) #Function to calculate the LSRP from the sampled points
             end = time.time()
