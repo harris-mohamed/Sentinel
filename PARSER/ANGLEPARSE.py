@@ -6,15 +6,25 @@
 import re
 import numpy as np
 import sys
-#This try-except statement is for running the test_main.py file, for some reason, it fails to import PARSER correctly from this module.
-try: import PARSER.PARSER as lidar_parser
-except: import PARSER as lidar_parser
+import PARSER as lidar_parser  
 
 # EXTERNAL PATHS
 sys.path.append('../SLAM/RANSAC')
 
 # EXTERNAL LIBRARIES
 import RANSAC as ransac
+
+# Move the logs outside the version controlled files, then updates the paths below
+lidar_4 = '../../sample_logs/attempt-4-lidar.log'
+angle_4 = '../../sample_logs/attempt-4.log'
+lidar_5 = '../../sample_logs/attempt-5-lidar.log'
+angle_5 = '../../sample_logs/attempt-5.log'
+lidar_6 = '../../sample_logs/attempt-6-lidar.log'
+angle_6 = '../../sample_logs/attempt-6.log'
+
+lidar_p4 = lidar_parser.parser(lidar_4)
+lidar_p5 = lidar_parser.parser(lidar_5)
+lidar_p6 = lidar_parser.parser(lidar_6)
 
 # Function: Angle parser 
 # Description: Goes through the PUTTY log files and returns a dict
@@ -53,22 +63,16 @@ def merge(angles, lidar):
         message['Motor encoder'] = float(min_angle)
         
     return lidar
-if __name__=="__main__":
-    # Move the logs outside the version controlled files, then updates the paths below
-    lidar_4 = '../../sample_logs/attempt-4-lidar.log'
-    angle_4 = '../../sample_logs/attempt-4.log'
-    lidar_5 = '../../sample_logs/attempt-5-lidar.log'
-    angle_5 = '../../sample_logs/attempt-5.log'
-    lidar_6 = '../../sample_logs/attempt-6-lidar.log'
-    angle_6 = '../../sample_logs/attempt-6.log'
+    
+merge_4 = merge(angle_parser(angle_4), lidar_p4)
 
-    lidar_p4 = lidar_parser.parser(lidar_4)
-    lidar_p5 = lidar_parser.parser(lidar_5)
-    lidar_p6 = lidar_parser.parser(lidar_6)
-    merge_4 = merge(angle_parser(angle_4), lidar_p4)
+coor = ransac.ConvertToCartesian(merge_4)
 
-    coor = []
-    coor.append(ransac.ConvertToCartesian(merge_4))
+with open('test.txt', 'w') as file:
+    for coordinates in coor.values():
+        curr = str(coordinates[0]) + ' ' + str(coordinates[1]) + ' ' + str(coordinates[2]) + '\n'
+        file.write(curr)
 
-    # merge_5 = merge(angle_parser(angle_5), lidar_p5)
-    # merge_6 = merge(angle_parser(angle_6), lidar_p6)
+# merge_5 = merge(angle_parser(angle_5), lidar_p5)
+# merge_6 = merge(angle_parser(angle_6), lidar_p6)
+
