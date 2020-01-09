@@ -45,7 +45,7 @@ angle_p4 = ANGLEPARSE.angle_parser(angle_4)
 angle_p5 = ANGLEPARSE.angle_parser(angle_5)
 angle_p6 = ANGLEPARSE.angle_parser(angle_6)
 
-res = ANGLEPARSE.merge(angle_p6,lidar_p6) #This line takes the angle values and merges them with the lidar values.
+res = ANGLEPARSE.merge(angle_p4,lidar_p4) #This line takes the angle values and merges them with the lidar values.
 i=0
 lenres = len(res)
 print("Successfully parsed the scan! Now removing empty messages and sorting scans by frames...")
@@ -85,6 +85,7 @@ for index in range(0, len(frames), 1):
 ##    frame = frames[1]    
     (x, dx_sum) = EKF.UpdatePosition(x, dx_sum, dt1, dt2)
     scan = RANSAC.ConvertToCartesian(res, x)
+    scanfiltered = RANSAC.ConvertToCartesianMedianFilter(res, x, size=9)
     lenscan = len(scan)
     print("All "+str(lenscan)+" points have been moved to a new dictionary, now running RANSAC on frame "+str(index))
     #for plotting the points later
@@ -95,6 +96,13 @@ for index in range(0, len(frames), 1):
         xs.append(point[0])
         ys.append(point[1])
         zs.append(point[2])
+    xfs = []
+    yfs = []
+    zfs = []
+    for point in scanfiltered.values():
+        xfs.append(point[0])
+        yfs.append(point[1])
+        zfs.append(point[2])
 ##    start = time.time()
 ##    (Landmarks_New, LSRP_list, Unassociated_Points) = RANSAC.RANSAC(scan)
 ##    end = time.time()
@@ -102,16 +110,26 @@ for index in range(0, len(frames), 1):
 ##
 ##    Landmark_Pairs = RANSAC.PairLandmarks(Landmarks_New, Landmark_Positions, x, P)
 ##    (x, P) = EKF.EKF(x, dx_sum, P, Landmark_Positions, Landmarks_New, Landmark_Pairs)
+##    start = time.time()
+##    (Landmarks_New_filter, LSRP_list_filter, Unassociated_Points_filter) = RANSAC.RANSAC(scanfiltered)
+##    end = time.time()
+##    print("RANSAC took "+ str(end-start) + " seconds to process "+ str(len(scan))+" out of "+str(lenscan) +" points, extracting "+str(len(LSRP_list))+" Landmarks. Now associating new landmarks with current landmarks...")
+##
+##    Landmark_Pairs_filter = RANSAC.PairLandmarks(Landmarks_New_filter, Landmark_Positions, x, P)
+##    (x, P) = EKF.EKF(x, dx_sum, P, Landmark_Positions, Landmarks_New_filter, Landmark_Pairs_filter)
+##
     print("Plotting Points and Landmarks...")
     fig = plt.figure()
+    plt.clf()
     ax = Axes3D(fig)
-    ax.scatter(xs, ys, zs, s=1, marker='o', color='r')
+##    ax.scatter(xs, ys, zs, s=1, marker='o', color='r')
+    ax.scatter(xfs, yfs, zfs, s=1, marker='x', color='b')
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
     ##ax.set_xlim3d(-2000, 2000)
     ##ax.set_ylim3d(-2000, 2000)
     ##ax.set_zlim3d(-2000, 2000)
-##    RANSAC.plotLSRPs(ax, LSRP_list, ymax=7000)
+##    RANSAC.plotLSRPs(ax, LSRP_list_filter, ymax=7000)
     ax.view_init(45, -90)
-    plt.show(False)
+    plt.show()
