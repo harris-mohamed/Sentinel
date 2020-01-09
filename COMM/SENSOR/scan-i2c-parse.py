@@ -7,7 +7,7 @@ import sys
 import socket
 import time
 from datetime import datetime 
-import smbus
+# import smbus
 
 # EXTERNAL PATHS
 sys.path.append('../../SLAM/RANSAC')
@@ -23,13 +23,13 @@ STOP_CONT_SCAN = b'\x02sEN LMDscandata 0\x03'
 IP_ADDRESS = '169.254.100.100'
 
 microsecond = 10**(-6)
-angle_step = 10**(3)
+angle_step = 10**(4)
 scale_factor = {'3F800000': '1x',
                 '40000000': '2x' }
 
 
 arduino_address = 0x04
-bus = smbus.SMBus(1)
+# bus = smbus.SMBus(1)
 
 # Function: type converter
 # Description: Converts a number to specified base
@@ -77,9 +77,10 @@ def telegram_parse(scan):
                 'Angular Increment': '', 
                 'Quantity': '',
                 'Motor encoder': '',
+                'Timestamp': '',
                 'Measurement': [] }
-
-    if (scan[0] != 'sRA' or scan[1] != 'LMDscandata'):
+    print(scan)
+    if (scan[1] != 'LMDscandata'):
         print("There is something wrong with the scan data")
     else:
         telegram['Version Number'] = type_conv(scan[2], 'u16')
@@ -103,24 +104,57 @@ def telegram_parse(scan):
         for message in range(26, 26 + telegram['Quantity']):
             telegram['Measurement'].append(type_conv(scan[message], 'u16'))
         
-        print(telegram)
+        telegram['Timestamp'] = scan[-1]
+    
     return telegram    
 
 # Function: live_parse 
 # Description: Starts the socket and begins parsing appropriately 
-def live_parse():
-    curr = datetime.now()
-    file_name = str(curr.year) + "-" + str(curr.month) + "-" + str(curr.day) + "_" + str(curr.hour) + "-" + str(curr.minute) + "-" + str(curr.second) + ".txt"
-
+def live_parse(count):
     insideTelegram = False 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((IP_ADDRESS, PORT))
     sock.send(REQUEST_CONT_SCAN)
 
-    with open(file_name, "w") as file:
-        for byte in sock.recv(1):
-            curr_time = str(datetime.now())
-            file.write(curr_time)
+    scans = []
+    while 1:
+        scan = []
+        curr = ''
+        while 1:
+            msg_orig = sock.recv(1)
+            msg = msg_orig.decode('utf-8')
+            if msg_orig == b'\x02':
+                insideTelegram = True 
+            elif msg_orig == b'\x03':
+                insideTelegram = False 
+                break
+            elif msg == ' ':
+                scan.append(curr)
+                curr = ''
+            else:
+                curr += msg
+        
+        if (len(scan) < 4):
+            continue
+
+        curr = datetime.now()
+        nice_timestamp = str(curr.year) + "-" + str(curr.month) + "-" + str(curr.day) + "_" + str(curr.hour) + "-" + str(curr.minute) + "-" + str(curr.second)
+
+        scan.append(nice_timestamp)
+
+        initial_parse = telegram_parse(scan)
+        scans.append(initial_parse)
+        
+        if len(scans) == count:
+            sock.send(STOP_CONT_SCAN)
+            curr = datetime.now()
+            file_name = str(curr.year) + "-" + str(curr.month) + "-" + str(curr.day) + "_" + str(curr.hour) + "-" + str(curr.minute) + "-" + str(curr.second) + ".txt"
+            with open(file_name, "w") as file:
+                for ind_scan in scans:
+                    file.write(str(ind_scan))
+            break
+
+
 
 # Function: single_parse 
 # Description: Starts the socket and begins parsing appropriately 
@@ -146,12 +180,14 @@ def single_parse():
         else:
             curr += msg
     
-    # curr = datetime.now()
-    # file_name = str(curr.year) + "-" + str(curr.month) + "-" + str(curr.day) + "_" + str(curr.hour) + "-" + str(curr.minute) + "-" + str(curr.second) + ".txt"
+    curr = datetime.now()
+    nice_timestamp = str(curr.year) + "-" + str(curr.month) + "-" + str(curr.day) + "_" + str(curr.hour) + "-" + str(curr.minute) + "-" + str(curr.second)
+
+    scan.append(nice_timestamp)
 
     initial_parse = telegram_parse(scan)
     
-    print("Also got some spoof data from the Arduino: " + str(readNumber()))
+    # print("Also got some spoof data from the Arduino: " + str(readNumber()))
 
     # with open(file_name, 'w') as file:
     #     curr_time = str(datetime.now())
@@ -160,6 +196,11 @@ def single_parse():
     #     for scans in scan:
     #         file.write(scans)
     #         file.write(' ')
+    curr = datetime.now()
+    file_name = str(curr.year) + "-" + str(curr.month) + "-" + str(curr.day) + "_" + str(curr.hour) + "-" + str(curr.minute) + "-" + str(curr.second) + ".txt"
+    with open(file_name, "w") as file:
+        for ind_scan in scan:
+            file.write(str(ind_scan))
 
 # Function: I2C_read
 # Decription: Reads a certain amount of bytes from the I2C bus
@@ -167,5 +208,5 @@ def readNumber():
     number = bus.read_byte(arduino_address)
     return number
 
-# live_parse()
-single_parse()
+live_parse(4)
+# single_parse()
