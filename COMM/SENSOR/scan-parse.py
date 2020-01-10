@@ -12,7 +12,7 @@ from datetime import datetime
 sys.path.append('../../SLAM/RANSAC')
 
 # EXTERNAL LIBRARIES
-import RANSAC as ransac
+#import RANSAC as ransac
 
 # CONSTANTS 
 PORT = 2112
@@ -145,6 +145,7 @@ def single_parse():
 
     initial_parse = telegram_parse(scan)
     
+    print(initial_parse)
 
     # with open(file_name, 'w') as file:
     #     curr_time = str(datetime.now())
