@@ -7,7 +7,8 @@ import sys
 import socket
 import time
 from datetime import datetime 
-# import smbus
+import smbus2
+import struct
 
 # EXTERNAL PATHS
 sys.path.append('../../SLAM/RANSAC')
@@ -29,7 +30,7 @@ scale_factor = {'3F800000': '1x',
 
 
 arduino_address = 0x04
-# bus = smbus.SMBus(1)
+bus = smbus2.SMBus(1)
 
 # Function: type converter
 # Description: Converts a number to specified base
@@ -56,6 +57,17 @@ def type_conv(num, base):
     
     return conv
 
+# Function: I2C_read
+# Description: Reads a certain amount of bytes from the I2C bus
+def I2C_read():
+    return bus.read_i2c_block_data(arduino_address, 0, 4)
+
+# Function: I2C_write
+# Description: Writes a single byte to the I2C bus
+def I2C_write(num):
+    bus.write_byte(arduino_address, num)
+    return -1 
+
 # Function: telegram_parse 
 # Description: Parses a telegram message 
 def telegram_parse(scan):
@@ -79,7 +91,7 @@ def telegram_parse(scan):
                 'Motor encoder': '',
                 'Timestamp': '',
                 'Measurement': [] }
-    print(scan)
+    # print(scan)
     if (scan[1] != 'LMDscandata'):
         print("There is something wrong with the scan data")
     else:
@@ -105,7 +117,14 @@ def telegram_parse(scan):
             telegram['Measurement'].append(type_conv(scan[message], 'u16'))
         
         telegram['Timestamp'] = scan[-1]
-    
+        
+        I2C_write(1)
+        arduino_output = I2C_read() 
+
+        x = bytearray(arduino_output)
+        y = struct.unpack('f', x)
+        telegram['Motor encoder'] = y[0]
+
     return telegram    
 
 # Function: live_parse 
@@ -151,7 +170,7 @@ def live_parse(count):
             file_name = str(curr.year) + "-" + str(curr.month) + "-" + str(curr.day) + "_" + str(curr.hour) + "-" + str(curr.minute) + "-" + str(curr.second) + ".txt"
             with open(file_name, "w") as file:
                 for ind_scan in scans:
-                    file.write(str(ind_scan))
+                    file.write(str(ind_scan) + "\n")
             break
 
 
@@ -201,12 +220,6 @@ def single_parse():
     with open(file_name, "w") as file:
         for ind_scan in scan:
             file.write(str(ind_scan))
-
-# Function: I2C_read
-# Decription: Reads a certain amount of bytes from the I2C bus
-def readNumber():
-    number = bus.read_byte(arduino_address)
-    return number
 
 live_parse(4)
 # single_parse()
