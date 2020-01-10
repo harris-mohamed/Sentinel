@@ -27,7 +27,8 @@ const double PPR = 1080.00;  // This is a constant given by the manufacturer. Am
 /* ----------------------------------------------------------
        ENCODER INSTANTIATION
    ---------------------------------------------------------- */
-Encoder myEnc(2, 3);    // Pins 2 and 3 are interrupt pins 
+//Encoder myEnc(2, 3);    // Pins 2 and 3 are interrupt pins 
+Encoder myEnc(4, 5);
 
 void setup() {
     pinMode(LIVE, OUTPUT);

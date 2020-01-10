@@ -38,8 +38,8 @@ unsigned long t;
 /* ----------------------------------------------------------
        ENCODER INSTANTIATION
    ---------------------------------------------------------- */
-Encoder myEnc(2, 3);    // Pins 2 and 3 are interrupt pins
-
+//Encoder myEnc(2, 3);    // Pins 2 and 3 are interrupt pins
+Encoder myEnc(4, 5);
 /* ----------------------------------------------------------
         FUNCTIONS
    ---------------------------------------------------------- */
@@ -53,7 +53,7 @@ void setup() {
 
   /* ----- UART INIT ----- */
   digitalWrite(LIVE, LOW);
-  Serial.begin(9600, SERIAL_8N1);
+  Serial.begin(2000000, SERIAL_8N1);
   digitalWrite(LIVE, HIGH);
   delay(1000);
 
