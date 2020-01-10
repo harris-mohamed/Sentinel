@@ -21,6 +21,11 @@ PORT = 2112
 REQUEST_SINGLE_SCAN = b'\x02sRN LMDscandata\x03'  
 REQUEST_CONT_SCAN = b'\x02sEN LMDscandata 1\x03'
 STOP_CONT_SCAN = b'\x02sEN LMDscandata 0\x03'
+LOG_IN_CLIENT = b'\x02sMN SetAccessMode 03 F4724744\x03'
+LOG_OUT = b'\x02sMN Run\x03'
+ANGLE_TOGGLE_1 = b'\x02sWN LMPoutputRange 1 2710 FFF92230 225510\x03'
+ANGLE_TOGGLE_3 = b'\x02sWN LMPoutputRange 1 D05 FFF92230 225510\x03'
+SAVE_PARAM = b'\x02sMN mEEwriteall\x03'
 IP_ADDRESS = '169.254.100.100'
 
 microsecond = 10**(-6)
@@ -30,7 +35,31 @@ scale_factor = {'3F800000': '1x',
 
 
 arduino_address = 0x04
-bus = smbus2.SMBus(1)
+bus = smbus2.SMBus(3)
+
+# Function: angle_increment
+# Description: Toggles the angle increment
+def increment_toggle(num):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((IP_ADDRESS, PORT))
+    sock.send(LOG_IN_CLIENT)
+    print("Sent log in")
+    time.sleep(2)
+    if (num == 1):
+        sock.send(ANGLE_TOGGLE_1)
+        print("Changing angle to 1")
+        time.sleep(2)
+    elif (num == 3):
+        sock.send(ANGLE_TOGGLE_3)
+        print("Changing angle to 3")
+        time.sleep(2)
+    sock.send(SAVE_PARAM)
+    print("Save param!")
+    sock.send(LOG_OUT)
+    print("Logging out")
+    time.sleep(2)
+    print("Done!")
+    single_parse()
 
 # Function: type converter
 # Description: Converts a number to specified base
@@ -221,5 +250,6 @@ def single_parse():
         for ind_scan in scan:
             file.write(str(ind_scan))
 
-live_parse(4)
+live_parse(200)
 # single_parse()
+#increment_toggle(1)
