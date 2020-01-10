@@ -3,7 +3,7 @@
 #Created: December 7th, 2019
 #Last Edit: December 8th, 2019
 import sys
-
+import ast
 sys.path.append("..\\")
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -21,13 +21,14 @@ import PARSER.ANGLEPARSE as ANGLEPARSE
 ##single_scan = '../../sample_logs/dynamic_12-26-19_2252.log'
 #single_scan = '../../sample_logs/Dynamic-sweep_11-26-19.log'
 #single_scan = '../../sample_logs/Sweep2_11-22-19.log'
-lidar_4 = '../../sample_logs/attempt-4-lidar.log'
-angle_4 = '../../sample_logs/attempt-4.log'
-lidar_5 = '../../sample_logs/attempt-5-lidar.log'
-angle_5 = '../../sample_logs/attempt-5.log'
-lidar_6 = '../../sample_logs/attempt-6-lidar.log'
-angle_6 = '../../sample_logs/attempt-6.log'
+##lidar_4 = '../../sample_logs/attempt-4-lidar.log'
+##angle_4 = '../../sample_logs/attempt-4.log'
+##lidar_5 = '../../sample_logs/attempt-5-lidar.log'
+##angle_5 = '../../sample_logs/attempt-5.log'
+##lidar_6 = '../../sample_logs/attempt-6-lidar.log'
+##angle_6 = '../../sample_logs/attempt-6.log'
 
+parsed_log_file = 'putfilenamehere'
 
 x = [[0.0], [0.0], [0.0], [6.0], [3.0], [1.0]]
 dx_sum = np.zeros((3,1))
@@ -36,16 +37,20 @@ Landmark_Positions = {1:3}
 dt1 = 0.0
 dt2 = 0.0 #In reality, these would be grabbed from the Arduino.
 
-##res = PARSER.parser(lidar_4)
-lidar_p4 = PARSER.parser(lidar_4)
-lidar_p5 = PARSER.parser(lidar_5)
-lidar_p6 = PARSER.parser(lidar_6)
-
-angle_p4 = ANGLEPARSE.angle_parser(angle_4)
-angle_p5 = ANGLEPARSE.angle_parser(angle_5)
-angle_p6 = ANGLEPARSE.angle_parser(angle_6)
-
-res = ANGLEPARSE.merge(angle_p4,lidar_p4) #This line takes the angle values and merges them with the lidar values.
+####res = PARSER.parser(lidar_4)
+##lidar_p4 = PARSER.parser(lidar_4)
+##lidar_p5 = PARSER.parser(lidar_5)
+##lidar_p6 = PARSER.parser(lidar_6)
+##
+##angle_p4 = ANGLEPARSE.angle_parser(angle_4)
+##angle_p5 = ANGLEPARSE.angle_parser(angle_5)
+##angle_p6 = ANGLEPARSE.angle_parser(angle_6)
+with open(parsed_log_file, 'r') as file:
+    stringdicts = file.readlines()
+    res = []
+    for stringdict in stringdicts:
+        res.append(ast.literal_eval(stringdict))
+##res = ANGLEPARSE.merge(angle_p4,lidar_p4) #This line takes the angle values and merges them with the lidar values.
 i=0
 lenres = len(res)
 print("Successfully parsed the scan! Now removing empty messages and sorting scans by frames...")
