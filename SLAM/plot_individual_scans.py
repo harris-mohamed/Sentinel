@@ -15,6 +15,8 @@ import numpy as np
 import scipy.ndimage as nim
 from matplotlib import animation
 
+DIFF = 100
+
 OUTPUT_ANIMATION_NAME = 'no_filter.mp4' #include extension .mp4 in the name
 OUTPUT_ANIMATION_DIRECTORY = '../../'
 sample_logs = '../../sample_logs/'
@@ -64,7 +66,7 @@ while i<lenres:
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='polar')
-line, = ax.plot([],[],markersize=1, marker='o',linewidth=0)
+line, = ax.plot([],[],markersize=2, marker='o',linewidth=0)
 ax.set_ylim([0, 8000])
 
 def init():
@@ -72,24 +74,28 @@ def init():
     return line,
 
 def animate(i):
-	theta = res[i]['Motor encoder']
-	message_count = res[i]['Quantity']
-	angle_increment = np.radians(res[i]['Angular Increment'])
-	start_angle = np.radians(res[i]['Start Angle'])
-##	range_data = nim.median_filter(res[i]['Measurement'], size=15)
-	range_data = res[i]['Measurement']
-	ts = []
-	rs = []
-	for index in range(len(range_data)):
-		ts.append(start_angle+angle_increment*index)
-		rs.append(range_data[index])
-	line.set_data(ts, rs)
-	plt.text(-np.pi/3, 6000, "Motor Angle: "+str(theta)+" Degrees")
-	return line,
+    theta = res[i]['Motor encoder']
+    message_count = res[i]['Quantity']
+    angle_increment = np.radians(res[i]['Angular Increment'])
+    start_angle = np.radians(res[i]['Start Angle'])
+    range_data = nim.median_filter(res[i]['Measurement'], size=15)
+    ##	range_data = res[i]['Measurement']
+    ts = []
+    rs = []
+    for index in range(len(range_data)):
+        curr_range = range_data[index]
+##        if index!=0 and abs(curr_range-prev_range)>DIFF and curr_range<1000:
+##            curr_range = prev_range
+        ts.append(start_angle+angle_increment*index)
+        rs.append(curr_range)
+##        prev_range = range_data[index]
+    line.set_data(ts, rs)
+    plt.text(-np.pi/3, 6000, "Motor Angle: "+str(theta)+" Degrees")
+    return line,
 anim = animation.FuncAnimation(fig, animate, init_func=init,
                                frames=len(res), interval=200, blit=True)
 Writer = animation.writers['ffmpeg']
 writer = Writer(fps=15, metadata=dict(artist='Me'), bitrate=1800)
 
-anim.save(OUTPUT_ANIMATION_DIRECTORY+OUTPUT_ANIMATION_NAME, writer=writer)
+##anim.save(OUTPUT_ANIMATION_DIRECTORY+OUTPUT_ANIMATION_NAME, writer=writer)
 plt.show()
