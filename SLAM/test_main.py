@@ -4,17 +4,19 @@
 #Last Edit: December 8th, 2019
 import sys
 import ast
-sys.path.append("..\\")
+sys.path.append("..\PARSER")
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import time
 import RANSAC.RANSAC as RANSAC
-import PARSER.PARSER as PARSER
+##import PARSER
 import EKF.EKF as EKF
 import numpy as np
-import PARSER.ANGLEPARSE as ANGLEPARSE
+##import ANGLEPARSE
 
+LSRP_list = []
 # Log file locations 
+sample_logs = '../../sample_logs/'
 #single_scan = '../../sample_logs/Static-sweep0_11-26-19.log'
 #single_scan = '../../sample_logs/Static-sweep1_11-26-19.log'
 ##single_scan = '../../sample_logs/Static-sweep_11-26-19.log'
@@ -28,7 +30,17 @@ import PARSER.ANGLEPARSE as ANGLEPARSE
 ##lidar_6 = '../../sample_logs/attempt-6-lidar.log'
 ##angle_6 = '../../sample_logs/attempt-6.log'
 
-parsed_log_file = 'putfilenamehere'
+parsed_log_file = '2020-1-9_22-28-2-DIAGNOSTIC_RUN.txt'
+##parsed_log_file = '2020-1-9_22-42-41-NICK1.txt'
+##parsed_log_file = '2020-1-9_22-44-47-NICK2.txt'
+##parsed_log_file = '2020-1-9_22-53-29-LIGHTSOUT.txt'
+##parsed_log_file = '2020-1-9_22-53-55-LIGHTSOUTNICK.txt'
+##parsed_log_file = '2020-1-9_22-54-27-MOVINGNICK.txt'
+##parsed_log_file = '2020-1-9_22-57-23-BALLBOX.txt'
+##parsed_log_file = '2020-1-9_22-59-1-BALLRAISEDBOX.txt'
+##parsed_log_file = '2020-1-9_22-58-33-SNOWMAN.txt'
+
+parsed_log_file = sample_logs + parsed_log_file
 
 x = [[0.0], [0.0], [0.0], [6.0], [3.0], [1.0]]
 dx_sum = np.zeros((3,1))
@@ -86,11 +98,11 @@ print("The scan has been cleaned, now updating odometry...")
 ##		print(scan['Motor encoder'])
 for index in range(0, len(frames), 1):
     frame = frames[index]
-    if index>0: break
+##    if index>0: break
 ##    frame = frames[1]    
     (x, dx_sum) = EKF.UpdatePosition(x, dx_sum, dt1, dt2)
-    scan = RANSAC.ConvertToCartesian(res, x)
-    scanfiltered = RANSAC.ConvertToCartesianMedianFilter(res, x, size=9)
+    scan = RANSAC.ConvertToCartesian(frame, x)
+##    scanfiltered = RANSAC.ConvertToCartesianMedianFilter(res, x, size=9)
     lenscan = len(scan)
     print("All "+str(lenscan)+" points have been moved to a new dictionary, now running RANSAC on frame "+str(index))
     #for plotting the points later
@@ -101,13 +113,13 @@ for index in range(0, len(frames), 1):
         xs.append(point[0])
         ys.append(point[1])
         zs.append(point[2])
-    xfs = []
-    yfs = []
-    zfs = []
-    for point in scanfiltered.values():
-        xfs.append(point[0])
-        yfs.append(point[1])
-        zfs.append(point[2])
+##    xfs = []
+##    yfs = []
+##    zfs = []
+##    for point in scanfiltered.values():
+##        xfs.append(point[0])
+##        yfs.append(point[1])
+##        zfs.append(point[2])
 ##    start = time.time()
 ##    (Landmarks_New, LSRP_list, Unassociated_Points) = RANSAC.RANSAC(scan)
 ##    end = time.time()
@@ -127,14 +139,14 @@ for index in range(0, len(frames), 1):
     fig = plt.figure()
     plt.clf()
     ax = Axes3D(fig)
-##    ax.scatter(xs, ys, zs, s=1, marker='o', color='r')
-    ax.scatter(xfs, yfs, zfs, s=1, marker='x', color='b')
+    ax.scatter(xs, ys, zs, s=1, marker='o', color='r')
+##    ax.scatter(xfs, yfs, zfs, s=1, marker='x', color='b')
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
-    ##ax.set_xlim3d(-2000, 2000)
-    ##ax.set_ylim3d(-2000, 2000)
-    ##ax.set_zlim3d(-2000, 2000)
-##    RANSAC.plotLSRPs(ax, LSRP_list_filter, ymax=7000)
+    ax.set_xlim3d(2000, 3000)
+    ax.set_ylim3d(1000, 3000)
+##    ax.set_zlim3d(-2000, 2000)
+    RANSAC.plotLSRPs(ax, LSRP_list, ymax=7000)
     ax.view_init(45, -90)
-    plt.show()
+    plt.show(False)
