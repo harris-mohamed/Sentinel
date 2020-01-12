@@ -9,11 +9,12 @@ from mpl_toolkits.mplot3d import Axes3D
 
 #Constants for the RANSAC Process
 X = 100.0 #The tolerance, how close points must be to the LSRP to be accurately represented by the LSRP, units are mm
-C = 75 #The consensus, how many points must be within tolerance of the LSRP to pass, units are points
+C = 100 #The consensus, how many points must be within tolerance of the LSRP to pass, units are points
 N = 50 #Max number of trials, units are trials
-S = 50 #The number of points sampled around the initially chosen point
-BOX = 1000 #mm, the dimensions of a box made to surround a randomly selected point for RANSAC
-
+S = 25 #The number of points sampled around the initially chosen point
+X_LIM = 200 #mm, the X-dimensions of a box made to surround a randomly selected point for RANSAC
+Y_LIM = 200 #mm, the Y-dimensions of a box made to surround a randomly selected point for RANSAC
+Z_LIM = 1000 #mm, the Z-dimensions of a box made to surround a randomly selected point for RANSAC
 ###################################################################################################################################################################
 #Function: calculateQ
 #Purpose: calculate the 'q-angle' for a specified increment of the lidar at angle phi
@@ -30,25 +31,25 @@ def calculateQ(theta, phi):
 
 
 ###################################################################################################################################################################
-#Function: SampleUnassociatedPointsAngles
+#Function: SampleUnassociatedPointsCartesian
 #Purpose: generate a sample of keys from the Unassociated_Points to use to generate a sample of points for LSRP calculation, using angle increments as selection criteria.
 #Inputs:
     #values, a list of values to the dictionary Unassociated_Points. The keys are tuples of the format (X, Y, Z)
 #Outputs:
-    #sample, a list of keys for RANSAC. is the length of S or fewer.
+    #sample, a list of points for RANSAC. is a length between 4 and S points.
     #SKIP, a boolean used to tell RANSAC whether or not to skip the current sample of points. Only used if the sample is not large enough to calculate a plane.
 def SampleUnassociatedPointsCartesian(values):
     SKIP = False
     valuelen = len(values)
     randIndex = int(np.random.randint(0, valuelen, 1)) #This selects a tuple from the keys list, holding the Cartesian coordinates for a point
     randPoint = values[randIndex]
-    print("Point with following coordinates has been chosen: " +str(randPoint))
-    upperboundX = randPoint[0] + BOX
-    lowerboundX = randPoint[0] - BOX
-    upperboundY = randPoint[1] + BOX    
-    lowerboundY = randPoint[1] - BOX
-    upperboundZ = randPoint[2] + BOX
-    lowerboundZ = randPoint[2] - BOX
+##    print("Point with following coordinates has been chosen: " +str(randPoint))
+    upperboundX = randPoint[0] + X_LIM
+    lowerboundX = randPoint[0] - X_LIM
+    upperboundY = randPoint[1] + Y_LIM    
+    lowerboundY = randPoint[1] - Y_LIM
+    upperboundZ = randPoint[2] + Z_LIM
+    lowerboundZ = randPoint[2] - Z_LIM
         
     sample = []
     trycount=0

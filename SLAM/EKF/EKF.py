@@ -229,6 +229,7 @@ def EKF(x, dx_sum, P, Landmark_Positions, Landmarks_New, Landmark_Pairs):
         SAMELANDMARK = ValidationGate(nuk, Skinv)
         if SAMELANDMARK: #If they were the same landmark, add 1 to N_obs
             N_obs += 1
+            Landmark_Positions[multiplier] = N_obs
         else: #If not, it is a new landmark. Set N_obs to 1, assign to the Landmarks dicitonary, and append to state vector
             N_obs = 1
             np.append(x, Landmark_New, 0)
