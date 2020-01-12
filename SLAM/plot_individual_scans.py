@@ -15,6 +15,8 @@ import numpy as np
 import scipy.ndimage as nim
 from matplotlib import animation
 
+OUTPUT_ANIMATION_NAME = 'no_filter.mp4' #include extension .mp4 in the name
+OUTPUT_ANIMATION_DIRECTORY = '../../'
 sample_logs = '../../sample_logs/'
 #single_scan = '../../sample_logs/Static-sweep0_11-26-19.log'
 #single_scan = '../../sample_logs/Static-sweep1_11-26-19.log'
@@ -89,5 +91,5 @@ anim = animation.FuncAnimation(fig, animate, init_func=init,
 Writer = animation.writers['ffmpeg']
 writer = Writer(fps=15, metadata=dict(artist='Me'), bitrate=1800)
 
-anim.save('no_filter.mp4', writer=writer)
+anim.save(OUTPUT_ANIMATION_DIRECTORY+OUTPUT_ANIMATION_NAME, writer=writer)
 plt.show()
