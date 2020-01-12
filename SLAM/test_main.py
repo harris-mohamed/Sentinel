@@ -13,6 +13,11 @@ import RANSAC.RANSAC as RANSAC
 import EKF.EKF as EKF
 import numpy as np
 ##import ANGLEPARSE
+X = 10 #mm, the maximum distance a point must be from an LSRP in RANSAC to be considered in tolerance.
+C = 5000 #Consensus for RANSAC, number of points that must pass the tolerance check of the LSRP
+N = 10 #Max number of trials in RANSAC before ending
+S = 1000 #Number of points to sample for RANSAC
+S_LIM = 100000 #mm, half the length of a side of the cube to draw around the randomly sampled point in RANSAC
 
 LSRP_list = []
 # Log file locations 
@@ -98,8 +103,8 @@ print("The scan has been cleaned, now updating odometry...")
 ##		print(scan['Motor encoder'])
 for index in range(0, len(frames), 1):
     frame = frames[index]
-##    if index>0: break
-##    frame = frames[1]    
+    if index>0: break
+    frame = frames[1]    
     (x, dx_sum) = EKF.UpdatePosition(x, dx_sum, dt1, dt2)
     scan = RANSAC.ConvertToCartesian(frame, x)
 ##    scanfiltered = RANSAC.ConvertToCartesianMedianFilter(res, x, size=9)
@@ -120,10 +125,10 @@ for index in range(0, len(frames), 1):
 ##        xfs.append(point[0])
 ##        yfs.append(point[1])
 ##        zfs.append(point[2])
-##    start = time.time()
-##    (Landmarks_New, LSRP_list, Unassociated_Points) = RANSAC.RANSAC(scan)
-##    end = time.time()
-##    print("RANSAC took "+ str(end-start) + " seconds to process "+ str(len(scan))+" out of "+str(lenscan) +" points, extracting "+str(len(LSRP_list))+" Landmarks. Now associating new landmarks with current landmarks...")
+    start = time.time()
+    (Landmarks_New, LSRP_list, Unassociated_Points) = RANSAC.RANSAC(scan, X, C, N, S, S_LIM)
+    end = time.time()
+    print("RANSAC took "+ str(end-start) + " seconds to process "+ str(len(scan))+" out of "+str(lenscan) +" points, extracting "+str(len(LSRP_list))+" Landmarks. Now associating new landmarks with current landmarks...")
 ##
 ##    Landmark_Pairs = RANSAC.PairLandmarks(Landmarks_New, Landmark_Positions, x, P)
 ##    (x, P) = EKF.EKF(x, dx_sum, P, Landmark_Positions, Landmarks_New, Landmark_Pairs)
@@ -144,8 +149,8 @@ for index in range(0, len(frames), 1):
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
-    ax.set_xlim3d(2000, 3000)
-    ax.set_ylim3d(1000, 3000)
+    ax.set_xlim3d(-3000, 3000)
+    ax.set_ylim3d(-3000, 3000)
 ##    ax.set_zlim3d(-2000, 2000)
     RANSAC.plotLSRPs(ax, LSRP_list, ymax=7000)
     ax.view_init(45, -90)

@@ -7,14 +7,6 @@ import time
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-#Constants for the RANSAC Process
-X = 100.0 #The tolerance, how close points must be to the LSRP to be accurately represented by the LSRP, units are mm
-C = 100 #The consensus, how many points must be within tolerance of the LSRP to pass, units are points
-N = 50 #Max number of trials, units are trials
-S = 25 #The number of points sampled around the initially chosen point
-X_LIM = 200 #mm, the X-dimensions of a box made to surround a randomly selected point for RANSAC
-Y_LIM = 200 #mm, the Y-dimensions of a box made to surround a randomly selected point for RANSAC
-Z_LIM = 1000 #mm, the Z-dimensions of a box made to surround a randomly selected point for RANSAC
 ###################################################################################################################################################################
 #Function: calculateQ
 #Purpose: calculate the 'q-angle' for a specified increment of the lidar at angle phi
@@ -38,18 +30,18 @@ def calculateQ(theta, phi):
 #Outputs:
     #sample, a list of points for RANSAC. is a length between 4 and S points.
     #SKIP, a boolean used to tell RANSAC whether or not to skip the current sample of points. Only used if the sample is not large enough to calculate a plane.
-def SampleUnassociatedPointsCartesian(values):
+def SampleUnassociatedPointsCartesian(values, S_LIM, S):
     SKIP = False
     valuelen = len(values)
     randIndex = int(np.random.randint(0, valuelen, 1)) #This selects a tuple from the keys list, holding the Cartesian coordinates for a point
     randPoint = values[randIndex]
 ##    print("Point with following coordinates has been chosen: " +str(randPoint))
-    upperboundX = randPoint[0] + X_LIM
-    lowerboundX = randPoint[0] - X_LIM
-    upperboundY = randPoint[1] + Y_LIM    
-    lowerboundY = randPoint[1] - Y_LIM
-    upperboundZ = randPoint[2] + Z_LIM
-    lowerboundZ = randPoint[2] - Z_LIM
+    upperboundX = randPoint[0] + S_LIM
+    lowerboundX = randPoint[0] - S_LIM
+    upperboundY = randPoint[1] + S_LIM    
+    lowerboundY = randPoint[1] - S_LIM
+    upperboundZ = randPoint[2] + S_LIM
+    lowerboundZ = randPoint[2] - S_LIM
         
     sample = []
     trycount=0
@@ -134,7 +126,7 @@ def ExtractLSRP(Sample):
     #Tolerance_Bool, a dictionary with the same keys as Unassociated_Points, whose values are a boolean showing whether or not that point passed tolerance.
     #x, an int specifying how many points from Unassociated_Points passed tolerance.
     
-def TestTolerance(Unassociated_Points, LSRP):
+def TestTolerance(Unassociated_Points, LSRP, X):
         beta1 = LSRP[0][0]
         beta2 = LSRP[1][0]
         beta3 = LSRP[2][0]
@@ -388,7 +380,7 @@ def plotLSRPs(figure, LSRP_list, xmin=-3000, xmax=3000, ymin=-3000, ymax=3000, a
     #Landmark_LSRPS, a list containing the coordinates of each LSRP.
     #LSRP_List, a list containing the parameters of the LSRP's. This is only for visualisation.
     
-def RANSAC(scan):
+def RANSAC(scan, X, C, N, S, S_LIM):
     
     Landmarks_New = {}
     LSRP_list = []
@@ -411,7 +403,7 @@ def RANSAC(scan):
         UnassociatedKeys = list(Unassociated_Points.keys())
         UnassociatedValues = list(Unassociated_Points.values())
         samplestart = time.time()
-        (Sample_points, SKIP) = SampleUnassociatedPointsCartesian(UnassociatedValues) #Function to return indexes of the sample of points to calculate LSRP
+        (Sample_points, SKIP) = SampleUnassociatedPointsCartesian(UnassociatedValues, S_LIM, S) #Function to return indexes of the sample of points to calculate LSRP
         sampleend = time.time()
         print("It took "+str(sampleend-samplestart)+" seconds to generate a sample of "+str(len(Sample_points))+" points")
         if not SKIP:
@@ -434,7 +426,7 @@ def RANSAC(scan):
             if not Error:
                 print("Sample LSRP Calculated after "+str(end-start)+" seconds.")
                 start = time.time()
-                (Tolerance_Bool, x) = TestTolerance(Unassociated_Points, LSRP)
+                (Tolerance_Bool, x) = TestTolerance(Unassociated_Points, LSRP, X)
                 end = time.time()
                 print(str(x)+" Points were found in tolerance with the Sample LSRP after "+str(end-start)+" seconds.")
                 
