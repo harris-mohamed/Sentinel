@@ -1,14 +1,17 @@
-# Project Sentinel: TiM781 live parser with I2C support
+# Project Sentinel: TiM781 live parser with IMU support
 # Harris M 
-# January 9, 2020 
+# January 21, 2020 
 
-# LIBRARIES
+# LIBRARIES - PYTHON ONLY 
 import sys
 import socket
 import time
-from datetime import datetime 
-import smbus2
+from time import sleep 
+from datetime import datetime
 import struct
+
+# LIBRARIES - RPI ONLY 
+import smbus 
 
 # EXTERNAL PATHS
 sys.path.append('../../SLAM/RANSAC')
@@ -24,52 +27,32 @@ IP_ADDRESS = '169.254.100.100'
 REQUEST_SINGLE_SCAN = b'\x02sRN LMDscandata\x03'  
 REQUEST_CONT_SCAN = b'\x02sEN LMDscandata 1\x03'
 STOP_CONT_SCAN = b'\x02sEN LMDscandata 0\x03'
-LOG_IN_CLIENT = b'\x02sMN SetAccessMode 03 F4724744\x03'
-LOG_OUT = b'\x02sMN Run\x03'
-ANGLE_TOGGLE_1 = b'\x02sWN LMPoutputRange 1 2710 FFF92230 225510\x03'
-ANGLE_TOGGLE_3 = b'\x02sWN LMPoutputRange 1 D05 FFF92230 225510\x03'
-SAVE_PARAM = b'\x02sMN mEEwriteall\x03'
 
-# CONSTANTS THAT NEED TO BE TESTED
-b'\x02 \x03'
-LOG_IN_CLIENT_ANSWER_SUCCESS = b'\x02sAN SetAccessMode 1\x03'
-LOG_IN_CLIENT_ANSWER_FAIL = b'\x02sAN SetAccessMode 0\x03'
-READ_FREQ_ANGLE = b'\x02sRN LMPscancfg\x03'
-READ_FREQ_ANGLE_ANSWER = b'\x02sRA LMPscancfg [Scan Frequency] [Number of Sectors] [Angular Resolution] [Start Angle] [Stop Angle]\x03'
-START_MEASUREMENT = b'\x02\x03'
-
+# SENSOR CONSTANTS
 microsecond = 10**(-6)
 angle_step = 10**(4)
 scale_factor = {'3F800000': '1x',
                 '40000000': '2x' }
 
+# RPI CONSTANTS 
+PWR_MGMT_1 = 0x6B 
+SMPLRT_DIV = 0x19 
+CONFIG = 0x1A 
+GYRO_CONFIG = 0x1B 
+INT_ENABLE = 0x38
+ACCEL_XOUT_H = 0x3B
+ACCEL_YOUT_H = 0x3D
+ACCEL_ZOUT_H = 0x3F
+GYRO_XOUT_H = 0x43
+GYRO_YOUT_H = 0x45
+GYRO_ZOUT_H = 0x47
 
-arduino_address = 0x04
-bus = smbus2.SMBus(3)
+accel_constant = 16384.0
+gyro_constant = 131.0
 
-# Function: angle_increment
-# Description: Toggles the angle increment
-def increment_toggle(num):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((IP_ADDRESS, PORT))
-    sock.send(LOG_IN_CLIENT)
-    print("Sent log in")
-    time.sleep(2)
-    if (num == 1):
-        sock.send(ANGLE_TOGGLE_1)
-        print("Changing angle to 1")
-        time.sleep(2)
-    elif (num == 3):
-        sock.send(ANGLE_TOGGLE_3)
-        print("Changing angle to 3")
-        time.sleep(2)
-    sock.send(SAVE_PARAM)
-    print("Save param!")
-    sock.send(LOG_OUT)
-    print("Logging out")
-    time.sleep(2)
-    print("Done!")
-    single_parse()
+# INSTANTIATIONS 
+accel_address = 0x68
+bus = smbus.SMBus(3)
 
 # Function: type converter
 # Description: Converts a number to specified base
@@ -96,16 +79,49 @@ def type_conv(num, base):
     
     return conv
 
-# Function: I2C_read
-# Description: Reads a certain amount of bytes from the I2C bus
-def I2C_read():
-    return bus.read_i2c_block_data(arduino_address, 0, 4)
+# Function: accel_init
+# Description: Initiates the accelerometer 
+def accel_init():
+    bus.write_byte_data(accel_address, SMPLRT_DIV, 7)
+    bus.write_byte_data(accel_address, PWR_MGMT_1, 1)
+    bus.write_byte_data(accel_address, CONFIG, 0)
+    bus.write_byte_data(accel_address, GYRO_CONFIG, 24)
+    bus.write_byte_data(accel_address, INT_ENABLE, 1)
 
-# Function: I2C_write
-# Description: Writes a single byte to the I2C bus
-def I2C_write(num):
-    bus.write_byte(arduino_address, num)
-    return -1 
+# Function: read_raw_data 
+# Description: Reads the raw data from the I2C bus 
+def read_raw_data(addr):
+    high = bus.read_byte_data(accel_address, addr)
+    low = bus.read_byte_data(accel_address, addr + 1)
+
+    value = ((high << 8) | low)
+
+    if (value > 32768):
+        value = value - 65536
+    
+    return value 
+
+# Function: accel_read
+# Description: Reads the accelerometer from the I2C bus
+def accel_read():
+    acc_x = read_raw_data(ACCEL_XOUT_H)
+    acc_y = read_raw_data(ACCEL_YOUT_H)
+    acc_z = read_raw_data(ACCEL_ZOUT_H)
+
+    gyro_x = read_raw_data(GYRO_XOUT_H)
+    gyro_y = read_raw_data(GYRO_YOUT_H)
+    gyro_z = read_raw_data(GYRO_ZOUT_H)
+
+    Ax = acc_x / accel_constant
+    Ay = acc_y / accel_constant
+    Az = acc_z / accel_constant
+
+    Gx = gyro_x / gyro_constant
+    Gy = gyro_y / gyro_constant
+    Gz = gyro_z / gyro_constant
+    
+    return Ax, Ay, Az, Gx, Gy, Gz
+    
 
 # Function: telegram_parse 
 # Description: Parses a telegram message 
@@ -157,19 +173,11 @@ def telegram_parse(scan):
         
         telegram['Timestamp'] = scan[-1]
         
-        I2C_write(1)
-        arduino_output = I2C_read() 
-
-        x = bytearray(arduino_output)
-        y = struct.unpack('f', x)
-        telegram['Motor encoder'] = y[0]
-
     return telegram    
 
 # Function: live_parse 
 # Description: Starts the socket and begins parsing appropriately 
 def live_parse(count):
-    insideTelegram = False 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((IP_ADDRESS, PORT))
     sock.send(REQUEST_CONT_SCAN)
@@ -181,10 +189,9 @@ def live_parse(count):
         while 1:
             msg_orig = sock.recv(1)
             msg = msg_orig.decode('utf-8')
-            if msg_orig == b'\x02':
-                insideTelegram = True 
-            elif msg_orig == b'\x03':
-                insideTelegram = False 
+
+            if msg_orig == b'\x03': 
+                scan.append(curr)
                 break
             elif msg == ' ':
                 scan.append(curr)
@@ -205,11 +212,11 @@ def live_parse(count):
         
         if len(scans) == count:
             sock.send(STOP_CONT_SCAN)
-            curr = datetime.now()
-            file_name = str(curr.year) + "-" + str(curr.month) + "-" + str(curr.day) + "_" + str(curr.hour) + "-" + str(curr.minute) + "-" + str(curr.second) + ".txt"
-            with open(file_name, "w") as file:
-                for ind_scan in scans:
-                    file.write(str(ind_scan) + "\n")
+            # curr = datetime.now()
+            # file_name = str(curr.year) + "-" + str(curr.month) + "-" + str(curr.day) + "_" + str(curr.hour) + "-" + str(curr.minute) + "-" + str(curr.second) + ".txt"
+            # with open(file_name, "w") as file:
+            #     for ind_scan in scans:
+            #         file.write(str(ind_scan) + "\n")
             break
 
 
@@ -245,8 +252,6 @@ def single_parse():
 
     initial_parse = telegram_parse(scan)
     
-    # print("Also got some spoof data from the Arduino: " + str(readNumber()))
-
     # with open(file_name, 'w') as file:
     #     curr_time = str(datetime.now())
     #     file.write(curr_time + ' ')
@@ -254,12 +259,9 @@ def single_parse():
     #     for scans in scan:
     #         file.write(scans)
     #         file.write(' ')
-    curr = datetime.now()
-    file_name = str(curr.year) + "-" + str(curr.month) + "-" + str(curr.day) + "_" + str(curr.hour) + "-" + str(curr.minute) + "-" + str(curr.second) + ".txt"
-    with open(file_name, "w") as file:
-        for ind_scan in scan:
-            file.write(str(ind_scan))
+    # curr = datetime.now()
+    # file_name = str(curr.year) + "-" + str(curr.month) + "-" + str(curr.day) + "_" + str(curr.hour) + "-" + str(curr.minute) + "-" + str(curr.second) + ".txt"
+    # with open(file_name, "w") as file:
+    #     for ind_scan in scan:
+    #         file.write(str(ind_scan))
 
-live_parse(200)
-# single_parse()
-#increment_toggle(1)
