@@ -16,8 +16,11 @@ sys.path.append('../../SLAM/RANSAC')
 # EXTERNAL LIBRARIES
 #import RANSAC as ransac
 
-# CONSTANTS 
+# CONNECTION CONSTANTS 
 PORT = 2112
+IP_ADDRESS = '169.254.100.100'
+
+# SCAN CONSTANTS
 REQUEST_SINGLE_SCAN = b'\x02sRN LMDscandata\x03'  
 REQUEST_CONT_SCAN = b'\x02sEN LMDscandata 1\x03'
 STOP_CONT_SCAN = b'\x02sEN LMDscandata 0\x03'
@@ -26,7 +29,14 @@ LOG_OUT = b'\x02sMN Run\x03'
 ANGLE_TOGGLE_1 = b'\x02sWN LMPoutputRange 1 2710 FFF92230 225510\x03'
 ANGLE_TOGGLE_3 = b'\x02sWN LMPoutputRange 1 D05 FFF92230 225510\x03'
 SAVE_PARAM = b'\x02sMN mEEwriteall\x03'
-IP_ADDRESS = '169.254.100.100'
+
+# CONSTANTS THAT NEED TO BE TESTED
+b'\x02 \x03'
+LOG_IN_CLIENT_ANSWER_SUCCESS = b'\x02sAN SetAccessMode 1\x03'
+LOG_IN_CLIENT_ANSWER_FAIL = b'\x02sAN SetAccessMode 0\x03'
+READ_FREQ_ANGLE = b'\x02sRN LMPscancfg\x03'
+READ_FREQ_ANGLE_ANSWER = b'\x02sRA LMPscancfg [Scan Frequency] [Number of Sectors] [Angular Resolution] [Start Angle] [Stop Angle]\x03'
+START_MEASUREMENT = b'\x02\x03'
 
 microsecond = 10**(-6)
 angle_step = 10**(4)
