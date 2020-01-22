@@ -1,4 +1,4 @@
-# Project Sentinel: TiM781 bare minimum communication with Python
+# Project Sentinel: TiM781 bare minimum communication with Python, provided by SICK
 # Harris M 
 # January 8, 2020 
 
