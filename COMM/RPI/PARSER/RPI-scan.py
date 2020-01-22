@@ -2,6 +2,14 @@
 # Harris M 
 # January 21, 2020 
 
+# LIBRARIES - AWS ONLY 
+from __future__ import print_function 
+from datetime import datetime 
+import boto3
+import json 
+from boto3.dynamodb.conditions import Key, Attr
+import decimal
+
 # LIBRARIES - PYTHON ONLY 
 import sys
 import socket
@@ -53,6 +61,8 @@ gyro_constant = 131.0
 # INSTANTIATIONS 
 accel_address = 0x68
 bus = smbus.SMBus(3)
+dynamodb = boto3.resource('dynamodb', region_name='us-east-2', endpoint_url="http://dynamodb.us-east-2.amazonaws.com")
+table = dynamodb.Table('Sentinel')
 
 # Function: type converter
 # Description: Converts a number to specified base
@@ -145,6 +155,12 @@ def telegram_parse(scan):
                 'Quantity': '',
                 'Motor encoder': '',
                 'Timestamp': '',
+                'Ax': '',
+                'Ay': '',
+                'Az': '',
+                'Gx': '',
+                'Gy': '',
+                'Gz': '',
                 'Measurement': [] }
     # print(scan)
     if (scan[1] != 'LMDscandata'):
@@ -173,6 +189,14 @@ def telegram_parse(scan):
         
         telegram['Timestamp'] = scan[-1]
         
+        Ax, Ay, Az, Gx, Gy, Gz = accel_read()
+        telegram['Ax'] = Ax
+        telegram['Ay'] = Ay
+        telegram['Az'] = Az
+        telegram['Gx'] = Gx
+        telegram['Gy'] = Gy
+        telegram['Gz'] = Gz
+
     return telegram    
 
 # Function: live_parse 
@@ -264,4 +288,11 @@ def single_parse():
     # with open(file_name, "w") as file:
     #     for ind_scan in scan:
     #         file.write(str(ind_scan))
+    return initial_parse
+
+def createItem():
+
+
+accel_init()
+test = single_parse()
 
