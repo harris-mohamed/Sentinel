@@ -20,6 +20,7 @@ import struct
 
 # LIBRARIES - RPI ONLY 
 import smbus 
+import serial 
 
 # EXTERNAL PATHS
 sys.path.append('../../SLAM/RANSAC')
@@ -63,6 +64,7 @@ accel_address = 0x68
 bus = smbus.SMBus(3)
 dynamodb = boto3.resource('dynamodb', region_name='us-east-2', endpoint_url="http://dynamodb.us-east-2.amazonaws.com")
 table = dynamodb.Table('Sentinel')
+ser = serial.Serial('/dev/ttyACM0', 115200)
 
 # Function: type converter
 # Description: Converts a number to specified base
@@ -275,7 +277,8 @@ def single_parse():
     scan.append(nice_timestamp)
 
     initial_parse = telegram_parse(scan)
-    
+    read_serial = ser.readline()
+    print(read_serial)
     # with open(file_name, 'w') as file:
     #     curr_time = str(datetime.now())
     #     file.write(curr_time + ' ')
@@ -290,9 +293,41 @@ def single_parse():
     #         file.write(str(ind_scan))
     return initial_parse
 
-def createItem():
 
+def createItem(telegram):
+    response = table.put_item(
+        Item={
+            'Time-stamp': str(telegram['Timestamp']),
+            'Version Number': str(telegram['Version Number']),
+            'Device Number': str(telegram['Device Number']),
+            'Serial Number': str(telegram['Serial Number']),
+            'Device Status': str(telegram['Device Status']),
+            'Telegram Counter': str(telegram['Telegram Counter']),
+            'Scan Counter': str(telegram['Scan Counter']),
+            'Time since start-up': str(telegram['Time since start-up']),
+            'Time of transmission': str(telegram['Time of transmission']),
+            'Scan Frequency': str(telegram['Scan Frequency']),
+            'Measurement Frequency': str(telegram['Measurement Frequency']),
+            'Amount of Encoder': str(telegram['Amount of Encoder']),
+            '16-bit Channels': str(telegram['16-bit Channels']),
+            'Scale Factor': str(telegram['Scale Factor']),
+            'Scale Factor Offset': str(telegram['Scale Factor Offset']),
+            'Start Angle': str(telegram['Start Angle']),
+            'Angular Increment': str(telegram['Angular Increment']),
+            'Quantity': str(telegram['Quantity']),
+            #'Motor encoder': str(telegram['Motor encoder']),
+            'Timestamp': str(telegram['Timestamp']),
+            'Ax': str(telegram['Ax']),
+            'Ay': str(telegram['Ay']),
+            'Az': str(telegram['Az']),
+            'Gx': str(telegram['Gx']),
+            'Gy': str(telegram['Gy']),
+            'Gz': str(telegram['Gz']),
+            'Measurement': str(telegram['Measurement'])
+        }
+    )
 
 accel_init()
 test = single_parse()
+createItem(test)
 
