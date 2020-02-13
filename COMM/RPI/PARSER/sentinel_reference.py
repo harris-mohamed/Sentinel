@@ -1,48 +1,20 @@
-# Project Sentinel: TiM781 live parser with IMU support
+# Project Sentinel: A file to hold all of the constants and utility functions 
 # Harris M 
-# January 21, 2020 
+# February 12, 2020
 
-# LIBRARIES - AWS ONLY 
-from __future__ import print_function 
-from datetime import datetime 
-import boto3
-import json 
-from boto3.dynamodb.conditions import Key, Attr
-import decimal
-
-# LIBRARIES - PYTHON ONLY 
-import sys
-import socket
-import time
-from time import sleep 
-from datetime import datetime
-import struct
-
-# LIBRARIES - RPI ONLY 
-import smbus 
-import serial 
-
-# EXTERNAL PATHS
-sys.path.append('../../SLAM/RANSAC')
-
-# EXTERNAL LIBRARIES
-import RANSAC as ransac
-
-# CONNECTION CONSTANTS 
-PORT = 2112
+# Port constants
+PORT = 2112 
 IP_ADDRESS = '169.254.100.100'
-
-# SCAN CONSTANTS
 REQUEST_SINGLE_SCAN = b'\x02sRN LMDscandata\x03'  
 REQUEST_CONT_SCAN = b'\x02sEN LMDscandata 1\x03'
 STOP_CONT_SCAN = b'\x02sEN LMDscandata 0\x03'
 
-# SENSOR CONSTANTS
-microsecond = 10**(-6)
-angle_step = 10**(4)
-scale_factor = {'3F800000': '1x',
+# Sensor constants
+MICROSECOND = 10**(-6)
+ANGLE_STOP = 10**(4)
+SCALE_FACTOR = {'3F800000': '1x',
                 '40000000': '2x' }
-
+            
 # RPI CONSTANTS 
 PWR_MGMT_1 = 0x6B 
 SMPLRT_DIV = 0x19 
@@ -55,20 +27,32 @@ ACCEL_ZOUT_H = 0x3F
 GYRO_XOUT_H = 0x43
 GYRO_YOUT_H = 0x45
 GYRO_ZOUT_H = 0x47
+ARDUINO_PORT = '/dev/ttyACM0'
+ARDUINO_BAUD = 115200
 
-accel_constant = 16384.0
-gyro_constant = 131.0
+# ACCELEROMETER CONSTANTS 
+ACCEL_CONSTANT = 16384.0
+GYRO_CONSTANT = 131.0
+ACCEL_ADDRESS = 0x68
+ACCEL_BUS_ADDRESS = 3
 
-# INSTANTIATIONS 
-accel_address = 0x68
-bus = smbus.SMBus(3)
-dynamodb = boto3.resource('dynamodb', region_name='us-east-2', endpoint_url="http://dynamodb.us-east-2.amazonaws.com")
-table = dynamodb.Table('Sentinel')
-ser = serial.Serial('/dev/ttyACM0', 115200)
+# AWS CONSTANTS  
+DB = 'dynamodb'
+REGION_NAME = 'us-east-2'
+ENDPOINT_URL = 'http://dynamodb.us-east-2.amazonaws.com'
+TABLE_NAME = 'Sentinel'
 
-# Function: type converter
-# Description: Converts a number to specified base
 def type_conv(num, base):
+    """Convert a string to an integer with the proper representation
+
+        Args:
+            num (string): String representation of number we wish to convert
+            base (string): Specifies the base we would like to convert to. Format is 'xy', 
+                           where x designates sign (u for unsigned, s for signed) and y is 
+                           number of bits the number is.
+        Return:
+            The converted number.
+    """
     initial = int(num, 16)
     if base == 's8':
         conv = (initial + 2**7) % 2**8 - 2**7
@@ -91,10 +75,8 @@ def type_conv(num, base):
     
     return conv
 
-# Function: accel_init
-# Description: Initiates the accelerometer 
 def accel_init():
-        """Instantiates the MPU-6050 module 
+    """Instantiates the MPU-6050 module 
 
         Args:
             None
@@ -107,9 +89,14 @@ def accel_init():
     bus.write_byte_data(accel_address, GYRO_CONFIG, 24)
     bus.write_byte_data(accel_address, INT_ENABLE, 1)
 
-# Function: read_raw_data 
-# Description: Reads the raw data from the I2C bus 
 def read_raw_data(addr):
+    """Instantiates the MPU-6050 module 
+
+        Args:
+            None
+        Return:
+            None
+    """
     high = bus.read_byte_data(accel_address, addr)
     low = bus.read_byte_data(accel_address, addr + 1)
 
@@ -120,9 +107,16 @@ def read_raw_data(addr):
     
     return value 
 
-# Function: accel_read
-# Description: Reads the accelerometer from the I2C bus
 def accel_read():
+    """Reads data from the MPU-6050 module  
+
+        Args:
+            None
+        Return:
+            Acceleration and Gyroscope data in 
+            all 3 axes. Acceleration is in m/s, 
+            gyro is in degrees/s
+    """
     acc_x = read_raw_data(ACCEL_XOUT_H)
     acc_y = read_raw_data(ACCEL_YOUT_H)
     acc_z = read_raw_data(ACCEL_ZOUT_H)
@@ -140,11 +134,15 @@ def accel_read():
     Gz = gyro_z / gyro_constant
     
     return Ax, Ay, Az, Gx, Gy, Gz
-    
 
-# Function: telegram_parse 
-# Description: Parses a telegram message 
 def telegram_parse(scan):
+    """ Converts a raw scan into a neat dictionary  
+
+        Args:
+            scan (array): Raw scan data 
+        Return:
+            Dictionary of parsed values
+    """
     telegram = {'Version Number': '',
                 'Device Number': '',
                 'Serial Number': '',
@@ -206,11 +204,16 @@ def telegram_parse(scan):
         telegram['Gy'] = Gy
         telegram['Gz'] = Gz
 
-    return telegram    
+    return telegram 
 
-# Function: live_parse 
-# Description: Starts the socket and begins parsing appropriately 
 def live_parse(count):
+    """ Scans as many consecutive scans as necessary  
+
+        Args:
+            scan (array): Raw scan data 
+        Return:
+            Dictionary of parsed values
+    """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((IP_ADDRESS, PORT))
     sock.send(REQUEST_CONT_SCAN)
@@ -247,11 +250,14 @@ def live_parse(count):
             sock.send(STOP_CONT_SCAN)
             break
 
-
-
-# Function: single_parse 
-# Description: Starts the socket and begins parsing appropriately 
 def single_parse():
+    """ Parses a single scan from the sensor
+
+        Args:
+            None 
+        Return:
+            Dictionary of parsed values
+    """
     insideTelegram = False 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((IP_ADDRESS, PORT))
@@ -282,8 +288,14 @@ def single_parse():
     read_serial = ser.readline()
     return initial_parse
 
+def uploadToAWS(telegram):
+    """ Uploads a scan to the AWS database
 
-def createItem(telegram):
+        Args:
+            A parsed telegram from the sensor 
+        Return:
+            None
+    """
     response = table.put_item(
         Item={
             'Time-stamp': str(telegram['Timestamp']),
@@ -315,10 +327,3 @@ def createItem(telegram):
             'Measurement': str(telegram['Measurement'])
         }
     )
-
-# RUN
-# Code to run 
-# accel_init()
-# test = single_parse()
-# createItem(test)
-
