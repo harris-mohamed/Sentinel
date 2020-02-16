@@ -1,0 +1,53 @@
+#Created by: Nicholas O'Brien
+#Project Sentinel; Kalman Filter Library
+from RANSAC.RANSAC import calculateQ
+import numpy as np
+
+###################################################################################################################################################################
+#Function: KALMAN
+#Purpose: use readings from the gyroscope and the mechanism encoder to estimate the current orientation of the sensor.
+#Inputs: 
+    #xk_1, a 3x1 numpy array that holds the last accepted orientation of the sensor
+    #Pk_1, a 3x3 numpy array that holds the covariances for the last accepted orientation
+    #theta_m, a float specifying the encoder-motor's current position, should be in radians
+    #omega, a 3x1 numpy array that is the format [[wx], [wy],[wz]] from the gyroscope
+    #dt, the time lapse between this calculation and the time at which xk_1 was last calculated.
+
+#Outputs:
+    #xk_new, a 3x1 numpy array that is the new accepted orientation of the sensor
+    #Pk_new, a 3x3 numpy array that is the new covariance matrix
+
+def KALMAN(xk_1, Pk_1, theta_m, omega, dt):
+    yk = [[calculateQ(theta_m,np.pi/2)],[calculateQ(theta_m,0)],[0]]
+
+    Qk = np.diag([0.1, 0.1, 0.1])
+    Rk = np.diag([1, 1, 1])
+    Phik = np.diag([np.exp(dt),np.exp(dt),np.exp(dt)])
+
+    phi =xk_1[0][0]
+    theta = xk_1[1][0]
+    Dk_1 = [[1, np.sin(phi)*np.tan(theta), np.cos(phi)*np.tan(theta)],
+            [0, np.cos(phi), -np.sin(phi)],
+            [0, np.sin(phi)/np.cos(theta), np.cos(phi)/np.cos(theta)]]
+    
+    xk_newpre = np.matmul(Dk_1,omega)*dt+xk_1
+    Pk_newpre = np.matmul(np.matmul(Phik,Pk_1),np.linalg.inv(Phik))+Qk
+
+    ek = yk-xk_newpre
+    Sk = Pk_newpre + Rk
+    Lk = np.matmul(Pk_newpre,np.linalg.inv(Sk))
+    xk_new = xk_newpre + np.matmul(Lk,ek)
+    Pk_new = Pk_newpre + np.matmul(np.matmul(Lk,Sk),np.transpose(Lk))
+    return(xk_new,Pk_new)
+
+if __name__=="__main__":
+    xk = [[0],[0],[0]]
+    Pk = [[0,0,0],[0,0,0],[0,0,0]]
+    omega = [[0.4],[0.4],[0.4]]
+    dt = 0.1
+    for angle in range(0,10):
+        theta_m = angle*0.1
+        (xk, Pk) = KALMAN(xk, Pk, theta_m, omega, dt)
+        print(xk)
+        print(Pk)
+
