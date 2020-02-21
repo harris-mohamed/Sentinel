@@ -191,13 +191,13 @@ def telegram_parse(scan):
         
         telegram['Timestamp'] = scan[-1]
         
-        Ax, Ay, Az, Gx, Gy, Gz = accel_read()
-        telegram['Ax'] = Ax
-        telegram['Ay'] = Ay
-        telegram['Az'] = Az
-        telegram['Gx'] = Gx
-        telegram['Gy'] = Gy
-        telegram['Gz'] = Gz
+        # Ax, Ay, Az, Gx, Gy, Gz = accel_read()
+        # telegram['Ax'] = Ax
+        # telegram['Ay'] = Ay
+        # telegram['Az'] = Az
+        # telegram['Gx'] = Gx
+        # telegram['Gy'] = Gy
+        # telegram['Gz'] = Gz
 
     return telegram    
 
@@ -277,8 +277,8 @@ def single_parse():
     scan.append(nice_timestamp)
 
     initial_parse = telegram_parse(scan)
-    read_serial = ser.readline()
-    print(read_serial)
+    # read_serial = ser.readline()
+    # print(read_serial)
     # with open(file_name, 'w') as file:
     #     curr_time = str(datetime.now())
     #     file.write(curr_time + ' ')
@@ -327,7 +327,8 @@ def createItem(telegram):
         }
     )
 
-accel_init()
+# accel_init()
 test = single_parse()
-createItem(test)
+print(test)
+# createItem(test)
 
