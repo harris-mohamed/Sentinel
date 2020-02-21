@@ -246,6 +246,50 @@ def live_parse(count):
             break
 
 
+# Function: Stop 'n Go 
+# Description: For a specified number of scans, will implement the stop 'n go method 
+def go_parse(count):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((IP_ADDRESS, PORT))
+    # sock.send(REQUEST_SINGLE_SCAN)
+    
+    const_g = 'g\n'
+    const_y = 'y'
+
+    scans = []
+    for i in range(count):
+        ser.write(const_g.encode('UTF-8'))
+
+        while 1:
+            curr = ser.readline() 
+            if str(curr.decode('utf-8')) == 'y':
+                break
+          
+        sock.send(REQUEST_SINGLE_SCAN)
+
+        while 1:
+            msg_orig = sock.recv(1)
+            msg = msg_orig.decode('utf-8')
+            if msg_orig == b'\x02':
+             insideTelegram = True 
+            elif msg_orig == b'\x03':
+                insideTelegram = False 
+                break
+            elif msg == ' ':
+                scan.append(curr)
+                curr = ''
+            else:
+                curr += msg
+    
+            curr = datetime.now()
+            nice_timestamp = str(curr.year) + "-" + str(curr.month) + "-" + str(curr.day) + "_" + str(curr.hour) + "-" + str(curr.minute) + "-" + str(curr.second)
+
+            scan.append(nice_timestamp)
+
+            initial_parse = telegram_parse(scan)
+            scans.append(initial_parse)
+        
+        return scans
 
 # Function: single_parse 
 # Description: Starts the socket and begins parsing appropriately 
@@ -328,7 +372,8 @@ def createItem(telegram):
     )
 
 # accel_init()
-test = single_parse()
+#test = single_parse()
+test = go_parse(10)
 print(test)
 # createItem(test)
 

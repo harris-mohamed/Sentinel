@@ -1,11 +1,11 @@
 // #include <Encoder.h>
 
-#define ROBOT_MOTOR_RIGHT_A 4
-#define ROBOT_MOTOR_RIGHT_B 5
-#define ROBOT_MOTOR_LEFT_A 6
-#define ROBOT_MOTOR_LEFT_B 7
-#define ROBOT_MOTOR_MECH_A 8
-#define ROBOT_MOTOR_MECH_B 9
+#define ROBOT_MOTOR_RIGHT_A 8 
+#define ROBOT_MOTOR_RIGHT_B 9 
+#define ROBOT_MOTOR_LEFT_A 5 
+#define ROBOT_MOTOR_LEFT_B 4 
+#define ROBOT_MOTOR_MECH_A 7
+#define ROBOT_MOTOR_MECH_B 6 
 
 // Encoder motor1(2, 3);
 // Encoder motor2(18, 19);
@@ -16,6 +16,7 @@ float oldPosition_motor2  = -999;
 float oldPosition_motor3  = -999;
 
 void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
   pinMode(ROBOT_MOTOR_RIGHT_A, OUTPUT);
   pinMode(ROBOT_MOTOR_RIGHT_B, OUTPUT);
   pinMode(ROBOT_MOTOR_LEFT_A, OUTPUT);
@@ -23,16 +24,34 @@ void setup() {
   pinMode(ROBOT_MOTOR_MECH_A, OUTPUT);
   pinMode(ROBOT_MOTOR_MECH_B, OUTPUT);
   Serial.begin(115200);
-  Serial.println("Done initializing!");
+  // Serial.println("Done initializing!");
 
   analogWrite(ROBOT_MOTOR_MECH_A, 0);
-  analogWrite(ROBOT_MOTOR_MECH_B, 130);
-  delay(2000); 
-  analogWrite(ROBOT_MOTOR_MECH_A, 0);
-  analogWrite(ROBOT_MOTOR_MECH_B, 0); 
+  analogWrite(ROBOT_MOTOR_MECH_B, 0);
+  analogWrite(ROBOT_MOTOR_RIGHT_A, 0);
+  analogWrite(ROBOT_MOTOR_RIGHT_B, 0);
+  analogWrite(ROBOT_MOTOR_LEFT_A, 0);
+  analogWrite(ROBOT_MOTOR_LEFT_B, 0); 
 }
 
 void loop() {
+
+	digitalWrite(LED_BUILTIN, HIGH);
+	int incomingByte = Serial.read();
+	while (incomingByte != 'g') {
+		incomingByte = Serial.read();
+	}
+	Serial.println('y'); 
+	digitalWrite(LED_BUILTIN, LOW);
+	
+	analogWrite(ROBOT_MOTOR_MECH_A, 180);
+	analogWrite(ROBOT_MOTOR_MECH_B, 0);
+	delay(1000);
+	analogWrite(ROBOT_MOTOR_MECH_A, 0);
+	analogWrite(ROBOT_MOTOR_MECH_B, 0);
+	// delay(50);
+
+	// Serial.print('y');  
 //  analogWrite(ROBOT_MOTOR_RIGHT_A, 130);
 //  analogWrite(ROBOT_MOTOR_RIGHT_B, 0);
 //  analogWrite(ROBOT_MOTOR_LEFT_A, 130);
