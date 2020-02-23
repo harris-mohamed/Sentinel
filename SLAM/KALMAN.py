@@ -17,6 +17,8 @@ import numpy as np
     #xk_new, a 3x1 numpy array that is the new accepted orientation of the sensor
     #Pk_new, a 3x3 numpy array that is the new covariance matrix
 
+#NOTES:
+    #The orientation of the gyroscope's axes is the following: {x' is aligned with -x_lidar, y' is aligned with y_lidar, z' is aligned with -z_lidar}
 def KALMAN(xk_1, Pk_1, theta_m, omega, dt):
     yk = [[calculateQ(theta_m,np.pi/2)],[calculateQ(theta_m,0)],[0]]
 
@@ -39,6 +41,26 @@ def KALMAN(xk_1, Pk_1, theta_m, omega, dt):
     xk_new = xk_newpre + np.matmul(Lk,ek)
     Pk_new = Pk_newpre + np.matmul(np.matmul(Lk,Sk),np.transpose(Lk))
     return(xk_new,Pk_new)
+###################################################################################################################################################################
+#Function: KALMAN
+#Purpose: use readings from the gyroscope and the mechanism encoder to estimate the current orientation of the sensor.
+#Inputs: 
+    #acc, the acceleration of gravity in the accelerometer's coordinate system.
+
+#Outputs:
+    #xk_estimate, the euler angles of the lidar's csys from the global.
+
+#NOTES:
+    #The orientation of the gyroscope's axes is the following: {x' is aligned with -x_lidar, y' is aligned with y_lidar, z' is aligned with -z_lidar}
+def Gravity(acc):
+    ax = acc[0][0]
+    ay = acc[1][0]
+    az = acc[2][0]
+    phi = np.arctan(-ay/az)
+    theta = np.arctan(ax*np.sin(phi)/ay)
+    psi = 0
+    xk_estimate = [[phi],[theta],[psi]]
+    return(xk_estimate)
 
 if __name__=="__main__":
     xk = [[0],[0],[0]]
@@ -50,4 +72,3 @@ if __name__=="__main__":
         (xk, Pk) = KALMAN(xk, Pk, theta_m, omega, dt)
         print(xk)
         print(Pk)
-
