@@ -94,7 +94,7 @@ def type_conv(num, base):
 # Function: accel_init
 # Description: Initiates the accelerometer 
 def accel_init():
-        """Instantiates the MPU-6050 module 
+    """Instantiates the MPU-6050 module 
 
         Args:
             None
@@ -247,7 +247,71 @@ def live_parse(count):
             sock.send(STOP_CONT_SCAN)
             break
 
+# Function: telegram_parse_
+# Description: Parses a telegram message 
+def telegram_parse(scan):
+    telegram = {'Version Number': '',
+                'Device Number': '',
+                'Serial Number': '',
+                'Device Status': '',
+                'Telegram Counter': '',
+                'Scan Counter': '',
+                'Time since start-up': '',
+                'Time of transmission': '',
+                'Scan Frequency': '',
+                'Measurement Frequency': '',
+                'Amount of Encoder': '',
+                '16-bit Channels': '',
+                'Scale Factor': '',
+                'Scale Factor Offset': '',
+                'Start Angle': '',
+                'Angular Increment': '', 
+                'Quantity': '',
+                'Motor encoder': '',
+                'Timestamp': '',
+                'Ax': '',
+                'Ay': '',
+                'Az': '',
+                'Gx': '',
+                'Gy': '',
+                'Gz': '',
+                'Measurement': [] }
 
+    if (scan[1] != 'LMDscandata'):
+        print("There is something wrong with the scan data")
+    else:
+        telegram['Version Number'] = type_conv(scan[2], 'u16')
+        telegram['Device Number'] = type_conv(scan[3], 'u16')
+        telegram['Serial Number'] = type_conv(scan[4], 'u32')
+        telegram['Device Status'] = type_conv(scan[6], 'u8')
+        telegram['Telegram Counter'] = type_conv(scan[7], 'u16')
+        telegram['Scan Counter'] = type_conv(scan[8], 'u16')
+        telegram['Time since start-up'] = type_conv(scan[9], 'u32') * microsecond
+        telegram['Time of transmission'] = type_conv(scan[10], 'u32') * microsecond
+        telegram['Scan Frequency'] = type_conv(scan[16], 'u32') 
+        telegram['Measurement Frequency'] = type_conv(scan[17], 'u32') 
+        telegram['Amount of Encoder'] = type_conv(scan[18], 'u32')
+        telegram['16-bit Channels'] = type_conv(scan[19], 'u32')
+        telegram['Scale Factor'] = scale_factor[scan[21]]
+        telegram['Scale Factor Offset'] = type_conv(scan[22], 'u32')
+        telegram['Start Angle'] = type_conv(scan[23], 's32') / angle_step
+        telegram['Angular Increment'] = type_conv(scan[24], 'u16') / angle_step
+        telegram['Quantity'] = type_conv(scan[25], 'u16')
+
+        for message in range(26, 26 + telegram['Quantity']):
+            telegram['Measurement'].append(type_conv(scan[message], 'u16'))
+        
+        telegram['Timestamp'] = scan[-1]
+        
+        Ax, Ay, Az, Gx, Gy, Gz = accel_read()
+        telegram['Ax'] = Ax
+        telegram['Ay'] = Ay
+        telegram['Az'] = Az
+        telegram['Gx'] = Gx
+        telegram['Gy'] = Gy
+        telegram['Gz'] = Gz
+
+    return telegram    
 
 # Function: single_parse 
 # Description: Starts the socket and begins parsing appropriately 
@@ -315,6 +379,20 @@ def createItem(telegram):
             'Measurement': str(telegram['Measurement'])
         }
     )
+
+def singleRun(): 
+    """Takes a single scan of the sensor, names it, and then uploads it to AWS
+
+        Args:
+            None
+        Return:
+            None
+    """
+
+    accel_init() 
+    telegram = single_parse()
+    createItem(telegram)
+    
 
 # RUN
 # Code to run 
