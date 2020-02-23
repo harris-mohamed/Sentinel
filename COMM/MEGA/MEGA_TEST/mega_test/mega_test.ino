@@ -36,19 +36,30 @@ void setup() {
 
 void loop() {
 
-	digitalWrite(LED_BUILTIN, HIGH);
-	int incomingByte = Serial.read();
-	while (incomingByte != 'g') {
-		incomingByte = Serial.read();
-	}
-	Serial.println('y'); 
-	digitalWrite(LED_BUILTIN, LOW);
-	
-	analogWrite(ROBOT_MOTOR_MECH_A, 180);
-	analogWrite(ROBOT_MOTOR_MECH_B, 0);
-	delay(1000);
 	analogWrite(ROBOT_MOTOR_MECH_A, 0);
 	analogWrite(ROBOT_MOTOR_MECH_B, 0);
+	digitalWrite(LED_BUILTIN, LOW);
+	delay(1000);
+	// digitalWrite(LED_BUILTIN, HIGH);
+	// int incomingByte = Serial.read();
+	// while (incomingByte != 'g') {
+	//	incomingByte = Serial.read();
+	// }
+	// Serial.println('y'); 
+	// digitalWrite(LED_BUILTIN, LOW);
+ 	if (Serial.available()) {
+		// digitalWrite(LED_BUILTIN, HIGH);
+		char in = Serial.read();
+		if (in == 'g'){
+		     digitalWrite(LED_BUILTIN, HIGH);
+		}
+		// Serial.println(in);
+	}	
+
+	// Serial.println("yeet");	
+	analogWrite(ROBOT_MOTOR_MECH_A, 0);
+	analogWrite(ROBOT_MOTOR_MECH_B, 0);
+	delay(1000);
 	// delay(50);
 
 	// Serial.print('y');  

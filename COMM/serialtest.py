@@ -331,7 +331,7 @@ def single_parse():
     scan.append(nice_timestamp)
 
     initial_parse = telegram_parse(scan)
-    read_serial = ser.readline()
+    # read_serial = ser.readline()
     return initial_parse
 
 def createItem(telegram):
@@ -434,13 +434,15 @@ setupSerial(115200, "/dev/ttyACM0")
 count = 0
 prevTime = time.time() 
 while True:
-    curr = single_parse()
-    print(curr)
+    # curr = single_parse()
+    # print(curr)
     arduinoReply = recvLikeArduino() 
     if not (arduinoReply == 'XXX'):
         print("Time %s Reply %s" %(time.time(), arduinoReply))
 
     if time.time() - prevTime > 1.0:
+        curr = single_parse()
+        print(curr)
         # sendToArduino("this is a test " + str(count))
         sendToArduino("g")
         prevTime = time.time()
