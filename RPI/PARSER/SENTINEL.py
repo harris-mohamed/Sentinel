@@ -38,7 +38,7 @@ class SENTINEL:
         bus = smbus.SMBus(3)
         dynamodb = boto3.resource(s.DB, region_name=s.REGION_NAME, endpoint_url=s.ENDPOINT_URL)
         table = dynamodb.Table(s.TABLE_NAME)
-        ser = serial.Serial(s.ARDUINO_PORT, s.ARDUINO_BAUD)
+        s.setupSerial()
     
     def singleScan():
         """Takes a single scan
@@ -51,7 +51,7 @@ class SENTINEL:
         return s.single_parse() 
 
     def contScan(count):
-       """Takes a specified number of consecutive scans
+        """Takes a specified number of consecutive scans
 
         Args:
             The number of consecutive scans to take
