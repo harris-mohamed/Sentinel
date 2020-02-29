@@ -185,6 +185,17 @@ class SENTINEL:
         else: 
             print("The parameters were written successfully.")
 
+    def beginArduinoComm():
+        """Starts communicating with the Arduino
+
+            Args:
+                None
+            Return:
+                None
+        """
+
+        
+
     def manualControl(): 
             """Enters manual control mode
 
