@@ -204,8 +204,8 @@ def ConvertToCartesian(res, x=[[0.0],[0.0],[0.0]]):
             for inc in range(0, message_count):
                 angle = start_angle + inc*angle_increment
                 rho = range_data[inc]
-                if rho<1000: #This is an attempt to remove datapoints that are too close to the origin.
-                    continue
+##                if rho<1000: #This is an attempt to remove datapoints that are too close to the origin.
+##                    continue
                 q = calculateQ(theta, angle)
                 x_lidar = rho*np.cos(angle)*np.cos(q_0)
                 y_lidar = rho*np.sin(angle)*np.cos(q_90)
@@ -215,6 +215,64 @@ def ConvertToCartesian(res, x=[[0.0],[0.0],[0.0]]):
                 z_global = z_lidar #For now, we assume sentinel does not change altitude. This is also making the global origin at the same height as the LIDAR
                 scan[(angle, q, rho)] = (x_global,y_global,z_global)
             offset += message_count
+        else:
+            continue
+    return(scan)
+###############################################################################################################################################################
+#Function: ConvertToCartesianEulerAngles
+#Purpose: to convert a single scan's values into the global csys' cartesian coordinate system, taking into account the robots current pose
+#Inputs:
+    #res, a dict from the parser containing scan data
+    #x, a nx1 numpy array, the state vector for our system
+#Outputs:
+    #scan, a dictionary containing all the points for a single scan, in the global coordinate system.
+#NOTE: this function will have to be restructured when we start to understand how the dataflow
+# from the LIDAR will look on the raspberry pi. For now, we assume we get a list of dictionaries for a frame.
+# In reality, we expect to get a steady stream of new dicts every few hundredths of a second.
+def ConvertToCartesianEulerAngles(res, x=[[0.0],[0.0],[0.0]]):
+    scan = {}
+    offset = 0
+##    omega = np.pi/3 #radians per second, this variable is the angular frequency of the motor from the video. for testing purposes only.
+    for index in range(0, len(res)):
+        if len(res[index]['Measurement'])!=0:
+##            if index==0:
+##                start = res[index]['Time of transmission']
+##            message_time = res[index]['Time of transmission']
+##            time_since_start = message_time-start
+            message_count = res[index]['Quantity']
+            angle_increment = np.radians(res[index]['Angular Increment'])
+            start_angle = np.radians(res[index]['Start Angle'])
+            range_data = res[index]['Measurement']
+            end_angle = start_angle + (message_count-1)*angle_increment
+##            theta = GetSensorEncoderData() #for when we have the arduino hooked up to the encoder, make sure it is in radians
+##            theta = omega*time_since_start #the assignment here is just for visualization
+            theta = np.radians(res[index]['Motor encoder'])
+##            print("Index is "+str(index))
+            euler = res[index]['Euler']
+            phi = euler[0][0]
+            theta = euler[1][0]
+            psi = euler[2][0]
+
+            Rlg = np.transpose([[np.cos(psi)*np.cos(theta), np.sin(psi)*np.cos(phi)+np.cos(psi)*np.sin(theta)*np.sin(phi), np.sin(psi)*np.sin(phi)-np.cos(psi)*np.sin(theta)*np.cos(phi)],
+                   [-np.sin(psi)*np.cos(theta), np.cos(psi)*np.cos(phi)-np.sin(psi)*np.sin(theta)*np.sin(phi), np.cos(psi)*np.sin(phi)+np.sin(psi)*np.sin(theta)*np.cos(phi)],
+                   [np.sin(theta), -np.cos(theta)*np.sin(phi), np.cos(theta)*np.cos(phi)]])
+
+
+            for inc in range(0, message_count):
+                angle = start_angle + inc*angle_increment
+                rho = range_data[inc]
+                
+                q = calculateQ(theta, angle)
+                x_lidar = rho*np.cos(angle)
+                y_lidar = rho*np.sin(angle)
+                z_lidar = 0
+                point = np.asarray([[x_lidar], [y_lidar], [z_lidar]])
+                newpoint = np.matmul(Rlg,point)+x
+
+##                x_global = x_lidar + x[0][0]
+##                y_global = y_lidar + x[1][0]
+##                z_global = z_lidar #For now, we assume sentinel does not change altitude. This is also making the global origin at the same height as the LIDAR
+                scan[(phi,theta,psi,rho,angle)] = newpoint
         else:
             continue
     return(scan)

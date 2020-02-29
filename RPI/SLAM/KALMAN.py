@@ -2,6 +2,7 @@
 #Project Sentinel; Kalman Filter Library
 from RANSAC.RANSAC import calculateQ
 import numpy as np
+import scipy.linalg as slp
 
 ###################################################################################################################################################################
 #Function: KALMAN
@@ -19,18 +20,17 @@ import numpy as np
 
 #NOTES:
     #The orientation of the gyroscope's axes is the following: {x' is aligned with -x_lidar, y' is aligned with y_lidar, z' is aligned with -z_lidar}
-def KALMAN(xk_1, Pk_1, theta_m, omega, dt):
+def KALMAN(xk_1, Pk_1, theta_m, omega, dt, Qk, Rk):
     yk = [[calculateQ(theta_m,np.pi/2)],[calculateQ(theta_m,0)],[0]]
-
-    Qk = np.diag([0.1, 0.1, 0.1])
-    Rk = np.diag([1, 1, 1])
-    Phik = np.diag([np.exp(dt),np.exp(dt),np.exp(dt)])
 
     phi =xk_1[0][0]
     theta = xk_1[1][0]
     Dk_1 = [[1, np.sin(phi)*np.tan(theta), np.cos(phi)*np.tan(theta)],
             [0, np.cos(phi), -np.sin(phi)],
             [0, np.sin(phi)/np.cos(theta), np.cos(phi)/np.cos(theta)]]
+
+    Phik = np.diag([np.exp(dt),np.exp(dt),np.exp(dt)])
+##    Phik = slp.expm(np.multiply(dt,Dk_1))
     
     xk_newpre = np.matmul(Dk_1,omega)*dt+xk_1
     Pk_newpre = np.matmul(np.matmul(Phik,Pk_1),np.linalg.inv(Phik))+Qk
@@ -39,10 +39,12 @@ def KALMAN(xk_1, Pk_1, theta_m, omega, dt):
     Sk = Pk_newpre + Rk
     Lk = np.matmul(Pk_newpre,np.linalg.inv(Sk))
     xk_new = xk_newpre + np.matmul(Lk,ek)
-    Pk_new = Pk_newpre + np.matmul(np.matmul(Lk,Sk),np.transpose(Lk))
+##    Pk_new = Pk_newpre + np.matmul(np.matmul(Lk,Sk),np.transpose(Lk))
+    Pk_new = np.matmul((np.eye(3)-Lk),Pk_newpre)
+    #As of Feb 29, 2020, the Pk matrix explodes due to the matrix effectively experiencing a 5th power growth in its determinant, with no added error.
     return(xk_new,Pk_new)
 ###################################################################################################################################################################
-#Function: KALMAN
+#Function: Gravity
 #Purpose: use readings from the gyroscope and the mechanism encoder to estimate the current orientation of the sensor.
 #Inputs: 
     #acc, the acceleration of gravity in the accelerometer's coordinate system.
@@ -59,7 +61,7 @@ def Gravity(acc):
     phi = np.arctan(-ay/az)
     theta = np.arctan(ax*np.sin(phi)/ay)
     psi = 0
-    xk_estimate = [[phi],[theta],[psi]]
+    xk_estimate = np.asarray([[phi],[theta],[psi]])
     return(xk_estimate)
 
 if __name__=="__main__":
