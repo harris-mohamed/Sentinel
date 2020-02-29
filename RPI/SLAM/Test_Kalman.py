@@ -12,6 +12,7 @@ import RANSAC.RANSAC as RANSAC
 ##import PARSER
 import EKF.EKF as EKF
 import numpy as np
+import KALMAN
 ##import ANGLEPARSE
 X = 10 #mm, the maximum distance a point must be from an LSRP in RANSAC to be considered in tolerance.
 C = 800 #Consensus for RANSAC, number of points that must pass the tolerance check of the LSRP
@@ -44,8 +45,9 @@ sample_logs = '../../../sample_logs/'
 ##parsed_log_file = '2020-1-9_22-57-23-BALLBOX.txt'
 ##parsed_log_file = '2020-1-9_22-59-1-BALLRAISEDBOX.txt'
 ##parsed_log_file = '2020-1-9_22-58-33-SNOWMAN.txt'p
-parsed_log_file = 'test_2-23-20.txt'
-##parsed_log_file = 'test0_2-23-20.txt'
+
+##parsed_log_file = 'test_2-23-20.txt'
+parsed_log_file = 'test0_2-23-20.txt'
 ##parsed_log_file = 'test1_2-23-20.txt'
 parsed_log_file = sample_logs + parsed_log_file
 
@@ -86,75 +88,79 @@ while i<lenres:
     else:
         i += 1
         
-frames = []
 frame = []
 for i in range(0, len(res), 1):
     frame.append(res[i])
-    if i==0: continue
-    
-##    current_motor_angle = res[i]['Motor encoder']
-##    previous_motor_angle = res[i-1]['Motor encoder']
-##    if current_motor_angle<100 and previous_motor_angle>200: #this line is supposed to check that the angle has rolled over.
-##        del frame[-1]
-##        frames.append(frame)
-##        frame = [res[i]]
-    if i==len(res)-1:
-        frames.append(frame)
-print("The scan has been cleaned, now updating odometry...")
-##for frame in frames:
-##	print("NEW FRAME, LENGTH = "+str(len(frame)))
-##	for scan in frame:
-##		print(scan['Motor encoder'])
-for index in range(0, len(frames), 1):
-    frame = frames[index]
-    if index>0: break    
-    (x, dx_sum) = EKF.UpdatePosition(x, dx_sum, dt1, dt2)
-    scan = RANSAC.ConvertToCartesian(frame, x)
-##    scanfiltered = RANSAC.ConvertToCartesianMedianFilter(res, x, size=9)
-    lenscan = len(scan)
-    print("All "+str(lenscan)+" points have been moved to a new dictionary, now running RANSAC on frame "+str(index))
-    #for plotting the points later
-    xs = []
-    ys = []
-    zs = []
-    for point in scan.values():
-        xs.append(point[0])
-        ys.append(point[1])
-        zs.append(point[2])
-##    xfs = []
-##    yfs = []
-##    zfs = []
-##    for point in scanfiltered.values():
-##        xfs.append(point[0])
-##        yfs.append(point[1])
-##        zfs.append(point[2])
-    start = time.time()
-    (Landmarks_New, LSRP_list, Unassociated_Points) = RANSAC.RANSAC(scan, X, C, N, S, S_LIM)
-    end = time.time()
-    print("RANSAC took "+ str(end-start) + " seconds to process "+ str(len(scan))+" out of "+str(lenscan) +" points, extracting "+str(len(LSRP_list))+" Landmarks. Now associating new landmarks with current landmarks...")
+
+xk_1 = np.asarray([[RANSAC.calculateQ(frame[0]['Motor encoder']*np.pi/180,np.pi/2)],[RANSAC.calculateQ(frame[0]['Motor encoder']*np.pi/180,0)],[0]])
+Pk_1 = np.eye(3)
+tk_1 = frame[0]['Time of transmission']
+frame[0]['Euler'] = xk_1
+
+error = [0]
+errorphi = [0]
+errortheta = [0]
+errorpsi = [0]
+Pnorm = [1]
+Qk = np.diag([1, 1, 100])
+Rk = np.diag([1, 1, 1])
+
+for i in range(1,len(frame),1):
+    theta_m = frame[i]['Motor encoder']*np.pi/180
+    omega = [[frame[i]['Gx']],[frame[i]['Gy']],[frame[i]['Gz']]]
+    dt = frame[i]['Time of transmission']-tk_1
+    (xk, Pk) = KALMAN.KALMAN(xk_1, Pk_1, theta_m, omega, dt, Qk, Rk)
+    xk_1 = xk
+    Pk_1 = Pk
+    errorvec = xk-KALMAN.Gravity([[frame[i]['Ax']],[frame[i]['Ay']],[frame[i]['Az']]])
+    errorphi.append(errorvec[0])
+    errortheta.append(errorvec[1])
+    errorpsi.append(errorvec[2])
+    error.append(np.linalg.norm(errorvec))
+    Pnorm.append(np.linalg.norm(Pk))
+    tk_1 = frame[i]['Time of transmission']
+    frame[i]['Euler'] = xk
+    print(Pk)
+##    print(dt)
+##kalmanscan = RANSAC.ConvertToCartesianEulerAngles(frame)
+##scan = RANSAC.ConvertToCartesian(frame)
+##lenscan = len(scan)
+indices = range(0,len(error),1)
+plt.plot(indices,error, indices, errorphi, indices, errortheta, indices, errorpsi, indices, Pnorm)
+plt.legend(("norm", "phi", "theta", "psi", "P_Norm"))
+plt.show()
+
+
+
+#for plotting the points later
+##xsk = []
+##ysk = []
+##zsk = []
+##for point in kalmanscan.values():
+##    xsk.append(point[0][0])
+##    ysk.append(point[1][0])
+##    zsk.append(point[2][0])
 ##
-##    Landmark_Pairs = RANSAC.PairLandmarks(Landmarks_New, Landmark_Positions, x, P)
-##    (x, P) = EKF.EKF(x, dx_sum, P, Landmark_Positions, Landmarks_New, Landmark_Pairs)
-##    start = time.time()
-##    (Landmarks_New_filter, LSRP_list_filter, Unassociated_Points_filter) = RANSAC.RANSAC(scanfiltered)
-##    end = time.time()
-##    print("RANSAC took "+ str(end-start) + " seconds to process "+ str(len(scan))+" out of "+str(lenscan) +" points, extracting "+str(len(LSRP_list))+" Landmarks. Now associating new landmarks with current landmarks...")
+##xs = []
+##ys = []
+##zs = []
+##for point in scan.values():
+##    xs.append(point[0])
+##    ys.append(point[1])
+##    zs.append(point[2])
 ##
-##    Landmark_Pairs_filter = RANSAC.PairLandmarks(Landmarks_New_filter, Landmark_Positions, x, P)
-##    (x, P) = EKF.EKF(x, dx_sum, P, Landmark_Positions, Landmarks_New_filter, Landmark_Pairs_filter)
-##
-    print("Plotting Points and Landmarks...")
-    fig = plt.figure()
-    plt.clf()
-    ax = Axes3D(fig)
-    ax.scatter(xs, ys, zs, s=1, marker='o', color='r')
-##    ax.scatter(xfs, yfs, zfs, s=1, marker='x', color='b')
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    ax.set_xlim3d(-3000, 3000)
-    ax.set_ylim3d(-3000, 3000)
-##    ax.set_zlim3d(-2000, 2000)
-    RANSAC.plotLSRPs(ax, LSRP_list, ymax=7000)
-    ax.view_init(45, -90)
-    plt.show(False)
+##fig = plt.figure()
+##plt.clf()
+##ax = Axes3D(fig)
+##ax.scatter(xs, ys, zs, s=1, marker='o', color='r')
+##ax.scatter(xsk, ysk, zsk, s=1, color='b')
+####    ax.scatter(xfs, yfs, zfs, s=1, marker='x', color='b')
+##ax.set_xlabel('X')
+##ax.set_ylabel('Y')
+##ax.set_zlabel('Z')
+##ax.set_xlim3d(-3000, 3000)
+##ax.set_ylim3d(-3000, 3000)
+####    ax.set_zlim3d(-2000, 2000)
+##RANSAC.plotLSRPs(ax, LSRP_list, ymax=7000)
+##ax.view_init(45, -90)
+##plt.show(False)
