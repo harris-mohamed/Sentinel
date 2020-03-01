@@ -126,27 +126,99 @@ void setup() {
 }
 
 void loop() {
-  float newPosition_motor1 = motor1.read();
-  float newPosition_motor2 = motor2.read();
-  float newPosition_motor3 = motor3.read();
+  float newPosition_motorLeft = motorLeft.read();
+  float newPosition_motorRight = motorRight.read();
+  float newPosition_motorMech = motorMech.read();
 
-  if (newPosition_motor1 != oldPosition_motor1) {
-    oldPosition_motor1 = newPosition_motor1;  
-    Serial.print("Motor 1 position: ");
-    Serial.println(newPosition_motor1);
+  if (newPosition_motorLeft != oldPosition_motorLeft) {
+    oldPosition_motorLeft = newPosition_motorLeft;  
+
+    rev_count_motorLeft = newPosition_motorLeft / 1080.00; 
+    rev_count_motorLeft += motorLeft_init;
+
+    float abs_save = abs(rev_count_motorLeft);
+    abs_save = abs_save - floor(abs_save);
+
+    if (rev_count_motorLeft > 0){
+      rev_count_motorLeft = abs_save;
+    } 
+    else if (rev_count_motorLeft < 0) {
+      rev_count_motorLeft = -abs_save;
+    }
+
+    double angle = angle_calc(rev_count_motorLeft);
+
+    byte* byte_split = (byte*)&rev_count_motorLeft; 
+
+    EEPROM_write(motorLeft_estart, byte_split[motorLeft_estart]);
+    EEPROM_write(motorLeft_estart + 1, byte_split[motorLeft_estart + 1]);
+    EEPROM_write(motorLeft_estart + 2, byte_split[motorLeft_estart + 2]);
+    EEPROM_write(motorLeft_estart + 3, byte_split[motorLeft_estart + 3]);
+    // Following two lines are for debugging
+    // Serial.print("Motor 1 position: ");
+    // Serial.println(newPosition_motor1);
   }
 
-  if (newPosition_motor2 != oldPosition_motor2) {
-    oldPosition_motor2 = newPosition_motor2;
-    Serial.print("Motor 2 position: ");
-    Serial.println(newPosition_motor2);  
+  if (newPosition_motorRight != oldPosition_motorRight) {
+    oldPosition_motorRight = newPosition_motorRight;
+
+    rev_count_motorRight = newPosition_motorRight / 1080.00; 
+    rev_count_motorRight += motorRight_init;
+
+    float abs_save = abs(rev_count_motorRight);
+    abs_save = abs_save - floor(abs_save);
+
+    if (rev_count_motorRight > 0){
+      rev_count_motorRight = abs_save;
+    } 
+    else if (rev_count_motorRight < 0) {
+      rev_count_motorRight = -abs_save;
+    }
+
+    double angle = angle_calc(rev_count_motorRight);
+
+    byte* byte_split = (byte*)&rev_count_motorRight; 
+
+    EEPROM_write(motorRight_estart, byte_split[motorRight_estart]);
+    EEPROM_write(motorRight_estart + 1, byte_split[motorRight_estart + 1]);
+    EEPROM_write(motorRight_estart + 2, byte_split[motorRight_estart + 2]);
+    EEPROM_write(motorRight_estart + 3, byte_split[motorRight_estart + 3]);
+    // Following two lines are for debugging
+    // Serial.print("Motor 2 position: ");
+    // Serial.println(newPosition_motor2);  
   }
 
-  if (newPosition_motor3 != oldPosition_motor3) {
-    oldPosition_motor3 = newPosition_motor3; 
-    Serial.print("Motor 3 position: ");
-    Serial.println(newPosition_motor3); 
+  if (newPosition_motorMech != oldPosition_motorMech) {
+    oldPosition_motorMech = newPosition_motorMech;
+
+    rev_count_motorMech = newPosition_motorMech / 1080.00; 
+    rev_count_motorMech += motorMech_init;
+
+    float abs_save = abs(rev_count_motorMech);
+    abs_save = abs_save - floor(abs_save);
+
+    if (rev_count_motorMech > 0){
+      rev_count_motorMech = abs_save;
+    } 
+    else if (rev_count_motorMech < 0) {
+      rev_count_motorMech = -abs_save;
+    }
+
+    double angle = angle_calc(rev_count_motorMech);
+
+    byte* byte_split = (byte*)&rev_count_motorMech; 
+
+    EEPROM_write(motorMech_estart, byte_split[motorMech_estart]);
+    EEPROM_write(motorMech_estart + 1, byte_split[motorMech_estart + 1]);
+    EEPROM_write(motorMech_estart + 2, byte_split[motorMech_estart + 2]);
+    EEPROM_write(motorMech_estart + 3, byte_split[motorMech_estart + 3])
+    // Following two lines are for debugging
+    // Serial.print("Motor 3 position: ");
+    // Serial.println(newPosition_motor3); 
   }
+
+  recvFromRPI();
+  replyToRPI();
 }
 
 /*--------------------------------------------------
@@ -266,13 +338,13 @@ void replyToRPI(){
     Serial.print(receivedChars);
       if (receivedChars[0] == 'g'){
         analogWrite(ROBOT_MOTOR_MECH_A, 0);
-        analogWrite(ROBOT_MOTOR_MECH_B, 0);
+        analogWrite(ROBOT_MOTOR_MECH_B, 180);
         delay(100);
+        analogWrite(ROBOT_MOTOR_MECH_A, 0);
+        analogWrite(ROBOT_MOTOR_MECH_B, 0);
       }
-      analogWrite(ROBOT_MOTOR_MECH_A, 0);
-      analogWrite(ROBOT_MOTOR_MECH_B, 0);
       Serial.print(" ");
-      Serial.print(newPosition);
+      Serial.print(newPosition_motorMech);
       Serial.print(" ");
       Serial.print('>');
       newData = false;
