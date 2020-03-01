@@ -107,13 +107,13 @@ class SENTINEL:
 
         
     def read_freq_angle():
-            """Reads and prints current angle and frequency settings 
+        """Reads and prints current angle and frequency settings 
 
-            Args:
-                None
-            Return:
-                None
-            """
+        Args:
+            None
+        Return:
+            None
+        """
         sock = connect()
         sock.send(READ_FOR_ANGLE_FREQ)
         scan = message_collect(sock)
