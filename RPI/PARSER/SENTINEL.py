@@ -20,6 +20,8 @@ import smbus
 import serial 
 import sentinel_reference as s
 
+sys.path.append("../SLAM")
+
 import RANSAC as ransac
 import KALMAN as kalman
 
@@ -38,9 +40,12 @@ class SENTINEL:
         dynamodb = boto3.resource(s.DB, region_name=s.REGION_NAME, endpoint_url=s.ENDPOINT_URL)
         table = dynamodb.Table(s.TABLE_NAME)
         s.setupSerial()
-        (Ax, Ay, Az) = accel_read()
+        accel_init()
+        (Ax, Ay, Az) = s.accel_read()
         x = kalman.Gravity([[Ax], [Ay], [Az]])
     
+    def accel_init():
+
     def singleScan():
         """Takes a single scan
 
