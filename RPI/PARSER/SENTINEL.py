@@ -2,19 +2,19 @@
 # Harris M 
 # February 5, 2020
 
-from time import sleep 
-from datetime import datetime
-import sys
-import socket
-import time
-import struct
-
 from __future__ import print_function 
 from datetime import datetime 
 from boto3.dynamodb.conditions import Key, Attr
 import boto3
 import json 
 import decimal
+
+from time import sleep 
+from datetime import datetime
+import sys
+import socket
+import time
+import struct
 
 import smbus 
 import serial 
