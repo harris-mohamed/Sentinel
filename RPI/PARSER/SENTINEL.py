@@ -216,6 +216,34 @@ class SENTINEL:
         
         return value         
 
+    def accel_read():
+        """Reads data from the MPU-6050 module  
+
+            Args:
+                None
+            Return:
+                Acceleration and Gyroscope data in 
+                all 3 axes. Acceleration is in m/s, 
+                gyro is in degrees/s
+        """
+        acc_x = self.read_raw_data(s.ACCEL_XOUT_H)
+        acc_y = self.read_raw_data(s.ACCEL_YOUT_H)
+        acc_z = self.read_raw_data(s.ACCEL_ZOUT_H)
+
+        gyro_x = self.read_raw_data(s.GYRO_XOUT_H)
+        gyro_y = self.read_raw_data(s.GYRO_YOUT_H)
+        gyro_z = self.read_raw_data(s.GYRO_ZOUT_H)
+
+        Ax = acc_x / s.accel_constant
+        Ay = acc_y / s.accel_constant
+        Az = acc_z / s.accel_constant
+
+        Gx = gyro_x / s.gyro_constant
+        Gy = gyro_y / s.gyro_constant
+        Gz = gyro_z / s.gyro_constant
+        
+        return Ax, Ay, Az, Gx, Gy, Gz
+
     def manualControl(self): 
         """Enters manual control mode
 
