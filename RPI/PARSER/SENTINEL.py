@@ -30,6 +30,9 @@ class SENTINEL:
     """ Function declarations for the SENTINEL class """
     
     bus = smbus.SMBus(3)
+    # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # sock.connect((s.IP_ADDRESS, s.PORT)) 
+
 
     def accel_init(self):
         """Instantiates the MPU-6050 module 
@@ -162,30 +165,30 @@ class SENTINEL:
         if (scan[1] != 'LMDscandata'):
             print("There is something wrong with the scan data")
         else:
-            telegram['Version Number'] = type_conv(scan[2], 'u16')
-            telegram['Device Number'] = type_conv(scan[3], 'u16')
-            telegram['Serial Number'] = type_conv(scan[4], 'u32')
-            telegram['Device Status'] = type_conv(scan[6], 'u8')
-            telegram['Telegram Counter'] = type_conv(scan[7], 'u16')
-            telegram['Scan Counter'] = type_conv(scan[8], 'u16')
-            telegram['Time since start-up'] = type_conv(scan[9], 'u32') * microsecond
-            telegram['Time of transmission'] = type_conv(scan[10], 'u32') * microsecond
-            telegram['Scan Frequency'] = type_conv(scan[16], 'u32') 
-            telegram['Measurement Frequency'] = type_conv(scan[17], 'u32') 
-            telegram['Amount of Encoder'] = type_conv(scan[18], 'u32')
-            telegram['16-bit Channels'] = type_conv(scan[19], 'u32')
-            telegram['Scale Factor'] = scale_factor[scan[21]]
-            telegram['Scale Factor Offset'] = type_conv(scan[22], 'u32')
-            telegram['Start Angle'] = type_conv(scan[23], 's32') / angle_step
-            telegram['Angular Increment'] = type_conv(scan[24], 'u16') / angle_step
-            telegram['Quantity'] = type_conv(scan[25], 'u16')
+            telegram['Version Number'] = self.type_conv(scan[2], 'u16')
+            telegram['Device Number'] = self.type_conv(scan[3], 'u16')
+            telegram['Serial Number'] = self.type_conv(scan[4], 'u32')
+            telegram['Device Status'] = self.type_conv(scan[6], 'u8')
+            telegram['Telegram Counter'] = self.type_conv(scan[7], 'u16')
+            telegram['Scan Counter'] = self.type_conv(scan[8], 'u16')
+            telegram['Time since start-up'] = self.type_conv(scan[9], 'u32') * s.MICROSECOND
+            telegram['Time of transmission'] = self.type_conv(scan[10], 'u32') * s.MICROSECOND
+            telegram['Scan Frequency'] = self.type_conv(scan[16], 'u32') 
+            telegram['Measurement Frequency'] = self.type_conv(scan[17], 'u32') 
+            telegram['Amount of Encoder'] = self.type_conv(scan[18], 'u32')
+            telegram['16-bit Channels'] = self.type_conv(scan[19], 'u32')
+            telegram['Scale Factor'] = s.SCALE_FACTOR[scan[21]]
+            telegram['Scale Factor Offset'] = self.type_conv(scan[22], 'u32')
+            telegram['Start Angle'] = self.type_conv(scan[23], 's32') / s.ANGLE_STOP
+            telegram['Angular Increment'] = self.type_conv(scan[24], 'u16') / s.ANGLE_STOP
+            telegram['Quantity'] = self.type_conv(scan[25], 'u16')
 
             for message in range(26, 26 + telegram['Quantity']):
-                telegram['Measurement'].append(type_conv(scan[message], 'u16'))
+                telegram['Measurement'].append(self.type_conv(scan[message], 'u16'))
             
             telegram['Timestamp'] = scan[-1]
             
-            Ax, Ay, Az, Gx, Gy, Gz = accel_read()
+            Ax, Ay, Az, Gx, Gy, Gz = self.accel_read()
             telegram['Ax'] = Ax
             telegram['Ay'] = Ay
             telegram['Az'] = Az
@@ -249,8 +252,8 @@ class SENTINEL:
         """
         insideTelegram = False 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((IP_ADDRESS, PORT))
-        sock.send(REQUEST_SINGLE_SCAN)
+        sock.connect((s.IP_ADDRESS, s.PORT))
+        sock.send(s.REQUEST_SINGLE_SCAN)
 
         scan = []
         curr = ''
@@ -273,8 +276,8 @@ class SENTINEL:
 
         scan.append(nice_timestamp)
 
-        initial_parse = telegram_parse(scan)
-        read_serial = ser.readline()
+        initial_parse = self.telegram_parse(scan)
+        # read_serial = ser.readline()
         return initial_parse
 
     def uploadToAWS(self, telegram):
@@ -487,8 +490,8 @@ while True:
     A = sentinel.accel_read()
     kalman.Predict(sentinel.x , P, [[A[3]], [A[4]], [A[5]]], time.time() - actualTime, Qk)
     actualTime = time.time()
-
-    print(sentinel.singleScanPretty())
+    print(arduinoReply)
+    # print(sentinel.single_parse())
 
     if not (arduinoReply == 'XXX'):
         yeet = arduinoReply.split(" ")
