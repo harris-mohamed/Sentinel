@@ -44,7 +44,7 @@ class SENTINEL:
         (Ax, Ay, Az) = s.accel_read()
         x = kalman.Gravity([[Ax], [Ay], [Az]])
     
-    def accel_init():
+    def accel_init(self):
         """Instantiates the MPU-6050 module 
 
             Args:
