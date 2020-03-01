@@ -15,6 +15,7 @@ import sys
 import socket
 import time
 import struct
+import numpy as np
 
 import smbus 
 import serial 
@@ -281,7 +282,7 @@ class SENTINEL:
         s.setupSerial()
         self.accel_init()
         self.A = self.accel_read()
-        self.x = kalman.Gravity([[A[0]], [A[1]], [A[2]]])
+        self.x = kalman.Gravity([[self.A[0]], [self.A[1]], [self.A[2]]])
 
 sentinel = SENTINEL()
 count = 0
@@ -297,6 +298,8 @@ while True:
     A = sentinel.accel_read()
     kalman.Predict(sentinel.x , P, [[A[3]], [A[4]], [A[5]]], time.time() - actualTime, Qk)
     actualTime = time.time()
+
+    print(sentinel.singleScanPretty())
 
     if not (arduinoReply == 'XXX'):
         yeet = arduinoReply.split(" ")
