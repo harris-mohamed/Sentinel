@@ -27,22 +27,6 @@ import KALMAN as kalman
 
 class SENTINEL:
     """ Function declarations for the SENTINEL class """
-
-    def __init__(self):
-        """Initializes neccesary constants and communication busses
-
-        Args:
-            None
-        Return:
-            None
-        """
-        bus = smbus.SMBus(3)
-        dynamodb = boto3.resource(s.DB, region_name=s.REGION_NAME, endpoint_url=s.ENDPOINT_URL)
-        table = dynamodb.Table(s.TABLE_NAME)
-        s.setupSerial()
-        accel_init()
-        (Ax, Ay, Az) = s.accel_read()
-        x = kalman.Gravity([[Ax], [Ay], [Az]])
     
     def accel_init(self):
         """Instantiates the MPU-6050 module 
@@ -58,7 +42,7 @@ class SENTINEL:
         bus.write_byte_data(accel_address, GYRO_CONFIG, 24)
         bus.write_byte_data(accel_address, INT_ENABLE, 1)
 
-    def singleScan():
+    def singleScan(self):
         """Takes a single scan
 
         Args:
@@ -68,7 +52,7 @@ class SENTINEL:
         """
         return s.single_parse() 
 
-    def contScan(count):
+    def contScan(self, count):
         """Takes a specified number of consecutive scans
 
         Args:
@@ -78,7 +62,7 @@ class SENTINEL:
         """ 
         return s.live_parse(count)
 
-    def singleScanPretty():
+    def singleScanPretty(self):
         """Takes a single scan and prints it for debugging
 
         Args:
@@ -90,7 +74,7 @@ class SENTINEL:
         print(current_scan)
         return current_scan 
 
-    def singleScanWithUpload():
+    def singleScanWithUpload(self):
         """Takes a single scan and uploads it to AWS
 
         Args:
@@ -103,7 +87,7 @@ class SENTINEL:
         s.uploadToAws(current_scan)
         return current_scan
 
-    def custom_message():
+    def custom_message(self):
         """Sends a custom message to the LIDAR sensor
 
         Args:
@@ -124,7 +108,7 @@ class SENTINEL:
         print("Output: ", scan)
 
         
-    def read_freq_angle():
+    def read_freq_angle(self):
         """Reads and prints current angle and frequency settings 
 
         Args:
@@ -151,7 +135,7 @@ class SENTINEL:
             print("Start angle: ", start_angle / 10000, "degrees")
             print("Stop angle: ", stop_angle / 10000, "degrees")
 
-    def load_factory_defaults():
+    def load_factory_defaults(self):
         """Loads factory defaults into LIDAR sensor
 
         Args:
@@ -168,7 +152,7 @@ class SENTINEL:
         else:
             print("Factory reset successful.")
         
-    def reboot_device():
+    def reboot_device(self):
         """Reboots LIDAR sensor
 
         Args:
@@ -185,7 +169,7 @@ class SENTINEL:
         else:
             print("Sensor reboot successful.")
 
-    def save_param_permanent():
+    def save_param_permanent(self):
         """Saves parameters to the LIDAR sensor
 
         Args:
@@ -214,7 +198,7 @@ class SENTINEL:
         
         
 
-    def manualControl(): 
+    def manualControl(self): 
         """Enters manual control mode
 
         Args:
@@ -237,5 +221,21 @@ class SENTINEL:
                 ser.write('D')
             elif (curr == 'q'):
                 break 
+
+    def __init__(self):
+        """Initializes neccesary constants and communication busses
+
+        Args:
+            None
+        Return:
+            None
+        """
+        bus = smbus.SMBus(3)
+        dynamodb = boto3.resource(s.DB, region_name=s.REGION_NAME, endpoint_url=s.ENDPOINT_URL)
+        table = dynamodb.Table(s.TABLE_NAME)
+        s.setupSerial()
+        accel_init()
+        (Ax, Ay, Az) = s.accel_read()
+        x = kalman.Gravity([[Ax], [Ay], [Az]])
 
 sentinel = SENTINEL()
