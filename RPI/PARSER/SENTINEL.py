@@ -216,7 +216,7 @@ class SENTINEL:
         
         return value         
 
-    def accel_read():
+    def accel_read(self):
         """Reads data from the MPU-6050 module  
 
             Args:
@@ -234,13 +234,13 @@ class SENTINEL:
         gyro_y = self.read_raw_data(s.GYRO_YOUT_H)
         gyro_z = self.read_raw_data(s.GYRO_ZOUT_H)
 
-        Ax = acc_x / s.accel_constant
-        Ay = acc_y / s.accel_constant
-        Az = acc_z / s.accel_constant
+        Ax = acc_x / s.ACCEL_CONSTANT
+        Ay = acc_y / s.ACCEL_CONSTANT
+        Az = acc_z / s.ACCEL_CONSTANT
 
-        Gx = gyro_x / s.gyro_constant
-        Gy = gyro_y / s.gyro_constant
-        Gz = gyro_z / s.gyro_constant
+        Gx = gyro_x / s.GYRO_CONSTANT
+        Gy = gyro_y / s.GYRO_CONSTANT
+        Gz = gyro_z / s.GYRO_CONSTANT
         
         return Ax, Ay, Az, Gx, Gy, Gz
 
@@ -280,7 +280,7 @@ class SENTINEL:
         table = dynamodb.Table(s.TABLE_NAME)
         s.setupSerial()
         self.accel_init()
-        (Ax, Ay, Az) = s.accel_read()
-        x = kalman.Gravity([[Ax], [Ay], [Az]])
+        A = self.accel_read()
+        x = kalman.Gravity([[A[0]], [A[1]], [A[2]]])
 
 sentinel = SENTINEL()
