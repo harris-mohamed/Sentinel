@@ -45,6 +45,18 @@ class SENTINEL:
         x = kalman.Gravity([[Ax], [Ay], [Az]])
     
     def accel_init():
+        """Instantiates the MPU-6050 module 
+
+            Args:
+                None
+            Return:
+                None
+        """
+        bus.write_byte_data(accel_address, SMPLRT_DIV, 7)
+        bus.write_byte_data(accel_address, PWR_MGMT_1, 1)
+        bus.write_byte_data(accel_address, CONFIG, 0)
+        bus.write_byte_data(accel_address, GYRO_CONFIG, 24)
+        bus.write_byte_data(accel_address, INT_ENABLE, 1)
 
     def singleScan():
         """Takes a single scan

@@ -157,20 +157,6 @@ def type_conv(num, base):
     
     return conv
 
-def accel_init():
-    """Instantiates the MPU-6050 module 
-
-        Args:
-            None
-        Return:
-            None
-    """
-    bus.write_byte_data(accel_address, SMPLRT_DIV, 7)
-    bus.write_byte_data(accel_address, PWR_MGMT_1, 1)
-    bus.write_byte_data(accel_address, CONFIG, 0)
-    bus.write_byte_data(accel_address, GYRO_CONFIG, 24)
-    bus.write_byte_data(accel_address, INT_ENABLE, 1)
-
 def read_raw_data(addr):
     """Instantiates the MPU-6050 module 
 
