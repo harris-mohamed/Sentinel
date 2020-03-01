@@ -220,3 +220,5 @@ class SENTINEL:
                 ser.write('D')
             elif (curr == 'q'):
                 break 
+
+sentinel = SENTINEL()
