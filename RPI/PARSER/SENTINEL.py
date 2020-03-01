@@ -28,6 +28,8 @@ import KALMAN as kalman
 class SENTINEL:
     """ Function declarations for the SENTINEL class """
     
+    bus = smbus.SMBus(3)
+
     def accel_init(self):
         """Instantiates the MPU-6050 module 
 
@@ -36,11 +38,11 @@ class SENTINEL:
             Return:
                 None
         """
-        bus.write_byte_data(accel_address, SMPLRT_DIV, 7)
-        bus.write_byte_data(accel_address, PWR_MGMT_1, 1)
-        bus.write_byte_data(accel_address, CONFIG, 0)
-        bus.write_byte_data(accel_address, GYRO_CONFIG, 24)
-        bus.write_byte_data(accel_address, INT_ENABLE, 1)
+        self.bus.write_byte_data(s.ACCEL_ADDRESS, s.SMPLRT_DIV, 7)
+        self.bus.write_byte_data(s.ACCEL_ADDRESS, s.PWR_MGMT_1, 1)
+        self.bus.write_byte_data(s.ACCEL_ADDRESS, s.CONFIG, 0)
+        self.bus.write_byte_data(s.ACCEL_ADDRESS, s.GYRO_CONFIG, 24)
+        self.bus.write_byte_data(s.ACCEL_ADDRESS, s.INT_ENABLE, 1)
 
     def singleScan(self):
         """Takes a single scan
@@ -230,11 +232,10 @@ class SENTINEL:
         Return:
             None
         """
-        bus = smbus.SMBus(3)
         dynamodb = boto3.resource(s.DB, region_name=s.REGION_NAME, endpoint_url=s.ENDPOINT_URL)
         table = dynamodb.Table(s.TABLE_NAME)
         s.setupSerial()
-        accel_init()
+        self.accel_init()
         (Ax, Ay, Az) = s.accel_read()
         x = kalman.Gravity([[Ax], [Ay], [Az]])
 
