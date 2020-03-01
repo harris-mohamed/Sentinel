@@ -33,6 +33,9 @@ class SENTINEL:
     # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # sock.connect((s.IP_ADDRESS, s.PORT)) 
 
+    global startSentinel, endSentinel, serialPort, dataStarted, dataBuf, messageComplete
+
+    global serialPort 
 
     def accel_init(self):
         """Instantiates the MPU-6050 module 
@@ -80,7 +83,7 @@ class SENTINEL:
         print(current_scan)
         return current_scan 
 
-    def setupSerial(baudRate=115200, serialPortName=ARDUINO_PORT):
+    def setupSerial(self, baudRate=115200, serialPortName=s.ARDUINO_PORT):
         """Instantiate serial port with Arduino
 
             Args:
@@ -89,10 +92,9 @@ class SENTINEL:
             Return:
                 None
         """
-        global serialPort 
         serialPort = serial.Serial(port= serialPortName, baudrate = baudRate, timeout=0, rtscts=True)
         print("Serial port " + serialPortName + " opened Baudrate " + str(baudRate))
-        waitForArduino()
+        self.waitForArduino()
 
 
     def waitForArduino(self):
@@ -106,7 +108,7 @@ class SENTINEL:
         print("Waiting for Arduino to reset")
         msg = ""
         while msg.find("Arduino is ready") == -1:
-            msg = recvLikeArduino() 
+            msg = self.recvLikeArduino() 
             if not (msg == 'XXX'):
                 print(msg)
 
@@ -118,7 +120,6 @@ class SENTINEL:
             Return:
                 Either the data buffer, or XXX to indicate failure
         """
-        global startSentinel, endSentinel, serialPort, dataStarted, dataBuf, messageComplete
         if serialPort.inWaiting() > 0 and messageComplete == False:
             x = serialPort.read().decode("utf-8") 
 
@@ -543,7 +544,7 @@ class SENTINEL:
         """
         dynamodb = boto3.resource(s.DB, region_name=s.REGION_NAME, endpoint_url=s.ENDPOINT_URL)
         table = dynamodb.Table(s.TABLE_NAME)
-        s.setupSerial()
+        self.setupSerial()
         self.accel_init()
         self.A = self.accel_read()
         self.x = kalman.Gravity([[self.A[0]], [self.A[1]], [self.A[2]]])
