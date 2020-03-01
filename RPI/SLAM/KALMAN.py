@@ -2,7 +2,7 @@
 #Project Sentinel; Kalman Filter Library
 from RANSAC.RANSAC import calculateQ
 import numpy as np
-import scipy.linalg as slp
+#import scipy.linalg as slp
 
 ###################################################################################################################################################################
 #Function: Predict
