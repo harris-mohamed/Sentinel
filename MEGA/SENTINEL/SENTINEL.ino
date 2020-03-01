@@ -25,11 +25,15 @@
 #define e_two 1 
 #define e_three 2 
 #define e_four 3
+
+#define motorLeft_estart  0 
+#define motorRight_estart 4
+#define motorMech_estart  8
+
 #define flag 4
 #define REV 360.00 
 #define PPR 1080.00 
 #define NUM_CHARS 64 
-
 #define LED LED_BUILTIN 
 
 /* ----------------------------------------------------------
@@ -40,7 +44,7 @@ long oldPosition_motorLeft  = -999;
 long oldPosition_motorMech  = -999; 
 float rev_count_motorRight, rev_count_motorLeft, rev_count_motorMech;
 float deg_motorRight, deg_motorLeft, def_motorMech; 
-float init_val;
+float motorLeft_init, motorRight_init, motorMech_init;
 unsigned long t; 
 char receivedMessage[NUM_CHARS];
 bool newData = false; 
@@ -62,9 +66,9 @@ void setup() {
   digitalWrite(LED, HIGH);
 
   // Instantiate encoders
-  Encoder motor1(2, 3);
-  Encoder motor2(18, 19);
-  Encoder motor3(20, 21);
+  Encoder motorLeft(2, 3);
+  Encoder motorRight(18, 19);
+  Encoder motorMech(20, 21);
 
   // Instantiate motor control pins
   pinMode(ROBOT_MOTOR_RIGHT_A, OUTPUT);
@@ -78,32 +82,50 @@ void setup() {
   Serial.begin(115200);
 
   // Initialize EEPROM 
-  char rev_1 = EEPROM_read(e_one);
-  char rev_2 = EEPROM_read(e_two);
-  char rev_3 = EEPROM_read(e_three);
-  char rev_4 = EEPROM_read(e_four);
+  char motorLeft_e_one = EEPROM(motorLeft_estart);
+  char motorLeft_e_two = EEPROM(motorLeft_estart + 1);
+  char motorLeft_e_three = EEPROM(motorLeft_estart + 2);
+  char motorLeft_e_four = EEPROM(motorLeft_estart + 3);
 
-  long x = (((long)rev_4 << 24) | ((long)rev_3 << 16) | ((long)rev_2 << 8) | (long)rev_1);
-  init_val = *(float*)&x;
+  char motorRight_e_one = EEPROM(motorRight_estart);
+  char motorRight_e_two = EEPROM(motorRight_estart + 1);
+  char motorRight_e_three = EEPROM(motorRight_estart + 2);
+  char motorRight_e_four = EEPROM(motorRight_estart + 3);
+
+  char motorMech_e_one = EEPROM(motorMech_estart);
+  char motorMech_e_two = EEPROM(motorMech_estart + 1);
+  char motorMech_e_three = EEPROM(motorMech_estart + 2);
+  char motorMech_e_four = EEPROM(motorMech_estart + 3);
+
+  char motorLeft_rev_1 = EEPROM_read(motorLeft_e_one);
+  char motorLeft_rev_2 = EEPROM_read(motorLeft_e_two);
+  char motorLeft_rev_3 = EEPROM_read(motorLeft_e_three);
+  char motorLeft_rev_4 = EEPROM_read(motorLeft_e_four);
+
+  char motorRight_rev_1 = EEPROM_read(motorRight_e_one);
+  char motorRight_rev_2 = EEPROM_read(motorRight_e_two);
+  char motorRight_rev_3 = EEPROM_read(motorRight_e_three);
+  char motorRight_rev_4 = EEPROM_read(motorRight_e_four);
+
+  char motorRight_rev_1 = EEPROM_read(motorMech_e_one);
+  char motorRight_rev_2 = EEPROM_read(motorMech_e_two);
+  char motorRight_rev_3 = EEPROM_read(motorMech_e_three);
+  char motorRight_rev_4 = EEPROM_read(motorMech_e_four);
+
+  long motorLeft_cat = (((long)rev_4 << 24) | ((long)rev_3 << 16) | ((long)rev_2 << 8) | (long)rev_1);
+  motorLeft_init = *(float*)&motorLeft_cat;
+
+  long motorRight_cat = (((long)rev_4 << 24) | ((long)rev_3 << 16) | ((long)rev_2 << 8) | (long)rev_1);
+  motorRight_init = *(float*)&motorRight_cat;
+
+  long motorMech_cat = (((long)rev_4 << 24) | ((long)rev_3 << 16) | ((long)rev_2 << 8) | (long)rev_1);
+  motorMech_init = *(float*)&motorMech_cat;
 
   Serial.println("<Arduino is ready>");
   digitalWrite(LED, LOW);
 }
 
 void loop() {
-//  analogWrite(ROBOT_MOTOR_RIGHT_A, 130);
-//  analogWrite(ROBOT_MOTOR_RIGHT_B, 0);
-//  analogWrite(ROBOT_MOTOR_LEFT_A, 130);
-//  analogWrite(ROBOT_MOTOR_LEFT_B, 0);
-//  analogWrite(ROBOT_MOTOR_MECH_A, 130);
-//  analogWrite(ROBOT_MOTOR_MECH_B, 0);
-  analogWrite(ROBOT_MOTOR_RIGHT_A, 0);
-  analogWrite(ROBOT_MOTOR_RIGHT_B, 0);
-  analogWrite(ROBOT_MOTOR_LEFT_A, 0);
-  analogWrite(ROBOT_MOTOR_LEFT_B, 0);
-  analogWrite(ROBOT_MOTOR_MECH_A, 0);
-  analogWrite(ROBOT_MOTOR_MECH_B, 0);
-
   float newPosition_motor1 = motor1.read();
   float newPosition_motor2 = motor2.read();
   float newPosition_motor3 = motor3.read();
@@ -252,8 +274,6 @@ void replyToRPI(){
       Serial.print(" ");
       Serial.print(newPosition);
       Serial.print(" ");
-      // Serial.print();
-      //Serial.print(millis());
       Serial.print('>');
       newData = false;
     }
