@@ -20,7 +20,7 @@ import smbus
 import serial 
 import sentinel_reference as s
 
-sys.path.append('../../SLAM/RANSAC')
+sys.path.append('../SLAM/RANSAC')
 
 import RANSAC as ransac
 
