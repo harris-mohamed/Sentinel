@@ -280,7 +280,33 @@ class SENTINEL:
         table = dynamodb.Table(s.TABLE_NAME)
         s.setupSerial()
         self.accel_init()
-        A = self.accel_read()
-        x = kalman.Gravity([[A[0]], [A[1]], [A[2]]])
+        self.A = self.accel_read()
+        self.x = kalman.Gravity([[A[0]], [A[1]], [A[2]]])
 
 sentinel = SENTINEL()
+count = 0
+prevTime = time.time() 
+actualTime = time.time()
+P = np.eye(3)
+
+Qk = np.diag([100, 100, 100])
+Rk = np.diag([1, 1, 1])
+
+while True:
+    arduinoReply = s.recvLikeArduino()
+    A = sentinel.accel_read()
+    kalman.Predict(sentinel.x , P, [[A[3]], [A[4]], [A[5]]], time.time() - actualTime, Qk)
+    actualTime = time.time()
+
+    if not (arduinoReply == 'XXX'):
+        yeet = arduinoReply.split(" ")
+        yeet = yeet[-2]
+        curr = sentinel.single_parse()
+        curr['Motor encoder'] = yeet
+        print(curr)
+
+
+    if time.time() - prevTime > 1.0:
+        s.sendToArduino('g')
+        prevTime = time.time()
+        count += 1
