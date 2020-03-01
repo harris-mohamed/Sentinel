@@ -46,8 +46,8 @@ sample_logs = '../../../sample_logs/'
 ##parsed_log_file = '2020-1-9_22-59-1-BALLRAISEDBOX.txt'
 ##parsed_log_file = '2020-1-9_22-58-33-SNOWMAN.txt'p
 
-##parsed_log_file = 'test_2-23-20.txt'
-parsed_log_file = 'test0_2-23-20.txt'
+parsed_log_file = 'test_2-23-20.txt'
+##parsed_log_file = 'test0_2-23-20.txt'
 ##parsed_log_file = 'test1_2-23-20.txt'
 parsed_log_file = sample_logs + parsed_log_file
 
@@ -102,7 +102,7 @@ errorphi = [0]
 errortheta = [0]
 errorpsi = [0]
 Pnorm = [1]
-Qk = np.diag([1, 1, 100])
+Qk = np.diag([100, 100, 100])
 Rk = np.diag([1, 1, 1])
 
 for i in range(1,len(frame),1):
