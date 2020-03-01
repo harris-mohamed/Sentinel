@@ -157,23 +157,6 @@ def type_conv(num, base):
     
     return conv
 
-def read_raw_data(addr):
-    """Instantiates the MPU-6050 module 
-
-        Args:
-            None
-        Return:
-            None
-    """
-    high = bus.read_byte_data(accel_address, addr)
-    low = bus.read_byte_data(accel_address, addr + 1)
-
-    value = ((high << 8) | low)
-
-    if (value > 32768):
-        value = value - 65536
-    
-    return value 
 
 def accel_read():
     """Reads data from the MPU-6050 module  

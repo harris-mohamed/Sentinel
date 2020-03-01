@@ -198,7 +198,23 @@ class SENTINEL:
     #             None
     #     """
         
+    def read_raw_data(self, addr):
+        """Instantiates the MPU-6050 module 
+
+            Args:
+                None
+            Return:
+                None
+        """
+        high = self.bus.read_byte_data(s.ACCEL_ADDRESS, addr)
+        low = self.bus.read_byte_data(s.ACCEL_ADDRESS, addr + 1)
+
+        value = ((high << 8) | low)
+
+        if (value > 32768):
+            value = value - 65536
         
+        return value         
 
     def manualControl(self): 
         """Enters manual control mode
