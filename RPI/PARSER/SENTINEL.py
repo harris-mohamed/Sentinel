@@ -134,13 +134,13 @@ class SENTINEL:
             print("Stop angle: ", stop_angle / 10000, "degrees")
 
     def load_factory_defaults():
-            """Loads factory defaults into LIDAR sensor
+        """Loads factory defaults into LIDAR sensor
 
-            Args:
-                None
-            Return:
-                None
-            """
+        Args:
+            None
+        Return:
+            None
+        """
         sock = connect()
         sock.send(LOAD_FACTORY_DEFAULTS)
         scan = message_collect(sock)
@@ -151,13 +151,13 @@ class SENTINEL:
             print("Factory reset successful.")
         
     def reboot_device():
-            """Reboots LIDAR sensor
+        """Reboots LIDAR sensor
 
-            Args:
-                None
-            Return:
-                None
-            """
+        Args:
+            None
+        Return:
+            None
+        """
         sock = connect()
         sock.send(REBOOT_TEST)
         scan = message_collect(sock)
@@ -168,13 +168,13 @@ class SENTINEL:
             print("Sensor reboot successful.")
 
     def save_param_permanent():
-            """Saves parameters to the LIDAR sensor
+        """Saves parameters to the LIDAR sensor
 
-            Args:
-                None
-            Return:
-                None
-            """
+        Args:
+            None
+        Return:
+            None
+        """
 
         sock = connect()
         sock.send(SAVE_PARAMETERS_PERMANENT)
@@ -185,25 +185,25 @@ class SENTINEL:
         else: 
             print("The parameters were written successfully.")
 
-    def beginArduinoComm():
-        """Starts communicating with the Arduino
+    # def beginArduinoComm():
+    #     """Starts communicating with the Arduino
 
-            Args:
-                None
-            Return:
-                None
-        """
+    #         Args:
+    #             None
+    #         Return:
+    #             None
+    #     """
         
         
 
     def manualControl(): 
-            """Enters manual control mode
+        """Enters manual control mode
 
-            Args:
-                None
-            Return:
-                None
-            """
+        Args:
+            None
+        Return:
+            None
+        """
         print("Entering manual control mode...")
         print("Enter WASD for direction control, or q to quit")
 
