@@ -43,7 +43,8 @@ long oldPosition_motorRight  = -999;
 long oldPosition_motorLeft  = -999;
 long oldPosition_motorMech  = -999; 
 float rev_count_motorRight, rev_count_motorLeft, rev_count_motorMech;
-float deg_motorRight, deg_motorLeft, def_motorMech; 
+float newPosition_motorLeft, newPosition_motorRight, newPosition_motorMech;
+float deg_motorRight, deg_motorLeft, def_motorMech, deg; 
 float motorLeft_init, motorRight_init, motorMech_init;
 unsigned long t; 
 char receivedMessage[NUM_CHARS];
@@ -97,21 +98,6 @@ void setup() {
   char motorMech_e_three = EEPROM_read(motorMech_estart + 2);
   char motorMech_e_four = EEPROM_read(motorMech_estart + 3);
 
-  //char motorLeft_rev_1 = EEPROM_read(motorLeft_e_one);
-  //char motorLeft_rev_2 = EEPROM_read(motorLeft_e_two);
-  //char motorLeft_rev_3 = EEPROM_read(motorLeft_e_three);
-  //char motorLeft_rev_4 = EEPROM_read(motorLeft_e_four);
-
-  //char motorRight_rev_1 = EEPROM_read(motorRight_e_one);
-  //char motorRight_rev_2 = EEPROM_read(motorRight_e_two);
-  //char motorRight_rev_3 = EEPROM_read(motorRight_e_three);
-  //char motorRight_rev_4 = EEPROM_read(motorRight_e_four);
-
-  //char motorRight_rev_1 = EEPROM_read(motorMech_e_one);
-  //char motorRight_rev_2 = EEPROM_read(motorMech_e_two);
-  //char motorRight_rev_3 = EEPROM_read(motorMech_e_three);
-  //char motorRight_rev_4 = EEPROM_read(motorMech_e_four);
-
   long motorLeft_cat = (((long)motorLeft_e_four << 24) | ((long)motorLeft_e_three << 16) | ((long)motorLeft_e_two << 8) | (long)motorLeft_e_one);
   motorLeft_init = *(float*)&motorLeft_cat;
 
@@ -126,9 +112,9 @@ void setup() {
 }
 
 void loop() {
-  float newPosition_motorLeft = motorLeft.read();
-  float newPosition_motorRight = motorRight.read();
-  float newPosition_motorMech = motorMech.read();
+  newPosition_motorLeft = motorLeft.read();
+  newPosition_motorRight = motorRight.read();
+  newPosition_motorMech = motorMech.read();
 
   if (newPosition_motorLeft != oldPosition_motorLeft) {
     oldPosition_motorLeft = newPosition_motorLeft;  
@@ -211,7 +197,7 @@ void loop() {
     EEPROM_write(motorMech_estart, byte_split[motorMech_estart]);
     EEPROM_write(motorMech_estart + 1, byte_split[motorMech_estart + 1]);
     EEPROM_write(motorMech_estart + 2, byte_split[motorMech_estart + 2]);
-    EEPROM_write(motorMech_estart + 3, byte_split[motorMech_estart + 3])
+    EEPROM_write(motorMech_estart + 3, byte_split[motorMech_estart + 3]);
     // Following two lines are for debugging
     // Serial.print("Motor 3 position: ");
     // Serial.println(newPosition_motor3); 
@@ -278,9 +264,9 @@ void EEPROM_write(int index, int val) {
 float angle_calc(float rev_c) {
   int round_ = (int) rev_c;
 
-  deg = abs(rev_count - round_) * rev;
+  deg = abs(rev_c - round_) * REV;
 
-  if (rev_count < 0) {
+  if (rev_c < 0) {
     deg *= -1;
   }
 
@@ -306,14 +292,14 @@ void recvFromRPI(){
 
     if (recvInProgress == true) {
       if (rc != endMarker) {
-        receivedChars[ndx] = rc; 
+        receivedMessage[ndx] = rc; 
         ndx++;
-        if (ndx >= numChars) {
-          ndx = numChars - 1;
+        if (ndx >= NUM_CHARS) {
+          ndx = NUM_CHARS - 1;
           }
         }
         else {
-          receivedChars[ndx] = '\0';
+          receivedMessage[ndx] = '\0';
           recvInProgress = false; 
           ndx = 0;
           newData = true;
@@ -335,8 +321,8 @@ void recvFromRPI(){
 void replyToRPI(){
   if (newData == true){
     Serial.print("<This just in ...");
-    Serial.print(receivedChars);
-      if (receivedChars[0] == 'g'){
+    Serial.print(receivedMessage);
+      if (receivedMessage[0] == 'g'){
         analogWrite(ROBOT_MOTOR_MECH_A, 0);
         analogWrite(ROBOT_MOTOR_MECH_B, 180);
         delay(100);
