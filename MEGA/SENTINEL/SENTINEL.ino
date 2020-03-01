@@ -9,7 +9,7 @@
 /* ----------------------------------------------------------
        LIBRARIES
    ---------------------------------------------------------- */
-#include <../Encoder/Encoder.h>
+#include <Encoder.h>
 #include <EEPROM.h>
 
 /* ----------------------------------------------------------
@@ -59,16 +59,16 @@ void EEPROM_write(int index, int val);
 void recvFromRPI();
 void replyToRPI();
 
+// Instantiate encoders
+Encoder motorLeft(2, 3);
+Encoder motorRight(18, 19);
+Encoder motorMech(20, 21);
+
 /*--- SETUP ---*/
 void setup() {
   // LED ON while we are initializing
   pinMode(LED, OUTPUT);
   digitalWrite(LED, HIGH);
-
-  // Instantiate encoders
-  Encoder motorLeft(2, 3);
-  Encoder motorRight(18, 19);
-  Encoder motorMech(20, 21);
 
   // Instantiate motor control pins
   pinMode(ROBOT_MOTOR_RIGHT_A, OUTPUT);
@@ -82,43 +82,43 @@ void setup() {
   Serial.begin(115200);
 
   // Initialize EEPROM 
-  char motorLeft_e_one = EEPROM(motorLeft_estart);
-  char motorLeft_e_two = EEPROM(motorLeft_estart + 1);
-  char motorLeft_e_three = EEPROM(motorLeft_estart + 2);
-  char motorLeft_e_four = EEPROM(motorLeft_estart + 3);
+  char motorLeft_e_one = EEPROM_read(motorLeft_estart);
+  char motorLeft_e_two = EEPROM_read(motorLeft_estart + 1);
+  char motorLeft_e_three = EEPROM_read(motorLeft_estart + 2);
+  char motorLeft_e_four = EEPROM_read(motorLeft_estart + 3);
 
-  char motorRight_e_one = EEPROM(motorRight_estart);
-  char motorRight_e_two = EEPROM(motorRight_estart + 1);
-  char motorRight_e_three = EEPROM(motorRight_estart + 2);
-  char motorRight_e_four = EEPROM(motorRight_estart + 3);
+  char motorRight_e_one = EEPROM_read(motorRight_estart);
+  char motorRight_e_two = EEPROM_read(motorRight_estart + 1);
+  char motorRight_e_three = EEPROM_read(motorRight_estart + 2);
+  char motorRight_e_four = EEPROM_read(motorRight_estart + 3);
 
-  char motorMech_e_one = EEPROM(motorMech_estart);
-  char motorMech_e_two = EEPROM(motorMech_estart + 1);
-  char motorMech_e_three = EEPROM(motorMech_estart + 2);
-  char motorMech_e_four = EEPROM(motorMech_estart + 3);
+  char motorMech_e_one = EEPROM_read(motorMech_estart);
+  char motorMech_e_two = EEPROM_read(motorMech_estart + 1);
+  char motorMech_e_three = EEPROM_read(motorMech_estart + 2);
+  char motorMech_e_four = EEPROM_read(motorMech_estart + 3);
 
-  char motorLeft_rev_1 = EEPROM_read(motorLeft_e_one);
-  char motorLeft_rev_2 = EEPROM_read(motorLeft_e_two);
-  char motorLeft_rev_3 = EEPROM_read(motorLeft_e_three);
-  char motorLeft_rev_4 = EEPROM_read(motorLeft_e_four);
+  //char motorLeft_rev_1 = EEPROM_read(motorLeft_e_one);
+  //char motorLeft_rev_2 = EEPROM_read(motorLeft_e_two);
+  //char motorLeft_rev_3 = EEPROM_read(motorLeft_e_three);
+  //char motorLeft_rev_4 = EEPROM_read(motorLeft_e_four);
 
-  char motorRight_rev_1 = EEPROM_read(motorRight_e_one);
-  char motorRight_rev_2 = EEPROM_read(motorRight_e_two);
-  char motorRight_rev_3 = EEPROM_read(motorRight_e_three);
-  char motorRight_rev_4 = EEPROM_read(motorRight_e_four);
+  //char motorRight_rev_1 = EEPROM_read(motorRight_e_one);
+  //char motorRight_rev_2 = EEPROM_read(motorRight_e_two);
+  //char motorRight_rev_3 = EEPROM_read(motorRight_e_three);
+  //char motorRight_rev_4 = EEPROM_read(motorRight_e_four);
 
-  char motorRight_rev_1 = EEPROM_read(motorMech_e_one);
-  char motorRight_rev_2 = EEPROM_read(motorMech_e_two);
-  char motorRight_rev_3 = EEPROM_read(motorMech_e_three);
-  char motorRight_rev_4 = EEPROM_read(motorMech_e_four);
+  //char motorRight_rev_1 = EEPROM_read(motorMech_e_one);
+  //char motorRight_rev_2 = EEPROM_read(motorMech_e_two);
+  //char motorRight_rev_3 = EEPROM_read(motorMech_e_three);
+  //char motorRight_rev_4 = EEPROM_read(motorMech_e_four);
 
-  long motorLeft_cat = (((long)rev_4 << 24) | ((long)rev_3 << 16) | ((long)rev_2 << 8) | (long)rev_1);
+  long motorLeft_cat = (((long)motorLeft_e_four << 24) | ((long)motorLeft_e_three << 16) | ((long)motorLeft_e_two << 8) | (long)motorLeft_e_one);
   motorLeft_init = *(float*)&motorLeft_cat;
 
-  long motorRight_cat = (((long)rev_4 << 24) | ((long)rev_3 << 16) | ((long)rev_2 << 8) | (long)rev_1);
+  long motorRight_cat = (((long)motorRight_e_four << 24) | ((long)motorRight_e_three << 16) | ((long)motorRight_e_two << 8) | (long)motorRight_e_one);
   motorRight_init = *(float*)&motorRight_cat;
 
-  long motorMech_cat = (((long)rev_4 << 24) | ((long)rev_3 << 16) | ((long)rev_2 << 8) | (long)rev_1);
+  long motorMech_cat = (((long)motorMech_e_four << 24) | ((long)motorMech_e_three << 16) | ((long)motorMech_e_two << 8) | (long)motorMech_e_one);
   motorMech_init = *(float*)&motorMech_cat;
 
   Serial.println("<Arduino is ready>");
