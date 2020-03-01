@@ -158,34 +158,6 @@ def type_conv(num, base):
     return conv
 
 
-def accel_read():
-    """Reads data from the MPU-6050 module  
-
-        Args:
-            None
-        Return:
-            Acceleration and Gyroscope data in 
-            all 3 axes. Acceleration is in m/s, 
-            gyro is in degrees/s
-    """
-    acc_x = read_raw_data(ACCEL_XOUT_H)
-    acc_y = read_raw_data(ACCEL_YOUT_H)
-    acc_z = read_raw_data(ACCEL_ZOUT_H)
-
-    gyro_x = read_raw_data(GYRO_XOUT_H)
-    gyro_y = read_raw_data(GYRO_YOUT_H)
-    gyro_z = read_raw_data(GYRO_ZOUT_H)
-
-    Ax = acc_x / accel_constant
-    Ay = acc_y / accel_constant
-    Az = acc_z / accel_constant
-
-    Gx = gyro_x / gyro_constant
-    Gy = gyro_y / gyro_constant
-    Gz = gyro_z / gyro_constant
-    
-    return Ax, Ay, Az, Gx, Gy, Gz
-
 def telegram_parse(scan):
     """ Converts a raw scan into a neat dictionary  
 
