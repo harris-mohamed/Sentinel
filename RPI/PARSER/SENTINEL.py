@@ -80,6 +80,78 @@ class SENTINEL:
         print(current_scan)
         return current_scan 
 
+    def setupSerial(baudRate=115200, serialPortName=ARDUINO_PORT):
+        """Instantiate serial port with Arduino
+
+            Args:
+                baudRate (int): Baud rate for serial connection
+                serialPortName (string): Specifies which serial port to connect to
+            Return:
+                None
+        """
+        global serialPort 
+        serialPort = serial.Serial(port= serialPortName, baudrate = baudRate, timeout=0, rtscts=True)
+        print("Serial port " + serialPortName + " opened Baudrate " + str(baudRate))
+        waitForArduino()
+
+
+    def waitForArduino(self):
+        """Waits for Arduino to connect to Raspberry Pi
+
+            Args:
+                None
+            Return:
+                None
+        """
+        print("Waiting for Arduino to reset")
+        msg = ""
+        while msg.find("Arduino is ready") == -1:
+            msg = recvLikeArduino() 
+            if not (msg == 'XXX'):
+                print(msg)
+
+    def recvLikeArduino(self):
+        """Handles received serial messages on the serial port
+
+            Args:
+                None
+            Return:
+                Either the data buffer, or XXX to indicate failure
+        """
+        global startSentinel, endSentinel, serialPort, dataStarted, dataBuf, messageComplete
+        if serialPort.inWaiting() > 0 and messageComplete == False:
+            x = serialPort.read().decode("utf-8") 
+
+            if dataStarted == True:
+                if x != endSentinel:
+                    dataBuf = dataBuf + x 
+                else:
+                    dataStarted = False 
+                    messageComplete = True 
+            elif x == startSentinel:
+                dataBuf = ''
+                dataStarted = True 
+
+        if (messageComplete == True):
+            messageComplete = False 
+            return dataBuf 
+        else: 
+            return "XXX"
+
+    def sendToArduino(self, stringToSend):
+        """Sends a properly encoded string to the Arduino
+
+            Args:
+                The string we want to send
+            Return:
+                None
+        """
+        global startSentinel, endSentinel, serialPort 
+
+        stringWithMarkers = (startSentinel)
+        stringWithMarkers += stringToSend 
+        stringWithMarkers += (endSentinel)
+
     def singleScanWithUpload(self):
         """Takes a single scan and uploads it to AWS
 
