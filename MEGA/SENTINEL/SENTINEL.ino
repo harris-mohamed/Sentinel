@@ -28,6 +28,7 @@
 #define flag 4
 #define REV 360.00 
 #define PPR 1080.00 
+#define NUM_CHARS 64 
 
 #define LED LED_BUILTIN 
 
@@ -41,14 +42,18 @@ float rev_count_motorRight, rev_count_motorLeft, rev_count_motorMech;
 float deg_motorRight, deg_motorLeft, def_motorMech; 
 float init_val;
 unsigned long t; 
+char receivedMessage[NUM_CHARS];
+bool newData = false; 
 
 /* ----------------------------------------------------------
        FUNCTIONS
    ---------------------------------------------------------- */
+float angle_calc(float rev_c);
+unsigned char EEPROM_read(int index);
 void EEPROM_clear();
 void EEPROM_write(int index, int val);
-unsigned char EEPROM_read(int index);
-float angle_calc(float rev_c);
+void recvFromRPI();
+void replyToRPI();
 
 /*--- SETUP ---*/
 void setup() {
@@ -81,7 +86,7 @@ void setup() {
   long x = (((long)rev_4 << 24) | ((long)rev_3 << 16) | ((long)rev_2 << 8) | (long)rev_1);
   init_val = *(float*)&x;
 
-  Serial.println("Done initializing!");
+  Serial.println("<Arduino is ready>");
   digitalWrite(LED, LOW);
 }
 
@@ -120,4 +125,136 @@ void loop() {
     Serial.print("Motor 3 position: ");
     Serial.println(newPosition_motor3); 
   }
+}
+
+/*--------------------------------------------------
+ * Function: EEPROM_clear 
+ * Purpose: Clears the EEPROM
+ * Input: None
+ * Output: None
+--------------------------------------------------*/
+void EEPROM_clear() {
+  // Following loop clears each EEPROM index
+  for (int i = 0; i < EEPROM.length(); i++) {
+    EEPROM.write(i, 0);
+  }
+
+  //Following loop checks to see if the CLEAR was successful
+  for (int address = 0; address < EEPROM.length(); address++) {
+    int current_val = EEPROM.read(address);
+
+    // I commented this out for now, but I should come back to this later 
+    // and actually code it 
+    if (current_val != 0) {
+      // Serial.println("EEPROM CLEAR not successful, something went wrong.");
+      break;
+    }
+  }
+  
+}
+
+/* ----------------------------------------------------------
+   Function:      EEPROM_read
+   Description:   Reads a desired index from the EEPROM
+   Inputs:        Index to read from the EEPROM
+   Outputs:       Value in the index of the EEPROM
+   ---------------------------------------------------------- */
+unsigned char EEPROM_read(int index) {
+  unsigned char current_val = EEPROM.read(index);
+  return current_val;
+}
+
+/* ----------------------------------------------------------
+   Function:      EEPROM_write
+   Description:   Writes a value into the desired index of the
+                  EEPROM
+   Inputs:        Index we want to write to and the value we want
+   Outputs:       None
+   ---------------------------------------------------------- */
+void EEPROM_write(int index, int val) {
+  EEPROM.write(index, val);
+}
+
+/* ----------------------------------------------------------
+   Function:      angle_calc
+   Description:   Calculates the angle of the sensor given rev count
+   Inputs:        The number of revolutions passed
+   Outputs:       The number of degrees turned
+   ---------------------------------------------------------- */
+float angle_calc(float rev_c) {
+  int round_ = (int) rev_c;
+
+  deg = abs(rev_count - round_) * rev;
+
+  if (rev_count < 0) {
+    deg *= -1;
+  }
+
+  return deg;
+}
+
+/* ----------------------------------------------------------
+   Function:      recvFromRPI
+   Description:   Receives the properly encoded message from the 
+                  RPI
+   Inputs:        None
+   Outputs:       None, but populates receivedChars
+   ---------------------------------------------------------- */
+void recvFromRPI(){
+  static boolean recvInProgress = false; 
+  static byte ndx = 0;
+  char startMarker = '<';
+  char endMarker = '>';
+  char rc; 
+
+  while (Serial.available() > 0 && newData == false) {
+    rc = Serial.read();
+
+    if (recvInProgress == true) {
+      if (rc != endMarker) {
+        receivedChars[ndx] = rc; 
+        ndx++;
+        if (ndx >= numChars) {
+          ndx = numChars - 1;
+          }
+        }
+        else {
+          receivedChars[ndx] = '\0';
+          recvInProgress = false; 
+          ndx = 0;
+          newData = true;
+          }
+      }
+
+      else if (rc == startMarker) {
+        recvInProgress = true;
+        }
+    }  
+}
+
+/* ----------------------------------------------------------
+   Function:      replyToRPI
+   Description:   Replies to the RPI on the serial bus 
+   Inputs:        None
+   Outputs:       None
+   ---------------------------------------------------------- */
+void replyToRPI(){
+  if (newData == true){
+    Serial.print("<This just in ...");
+    Serial.print(receivedChars);
+      if (receivedChars[0] == 'g'){
+        analogWrite(ROBOT_MOTOR_MECH_A, 0);
+        analogWrite(ROBOT_MOTOR_MECH_B, 0);
+        delay(100);
+      }
+      analogWrite(ROBOT_MOTOR_MECH_A, 0);
+      analogWrite(ROBOT_MOTOR_MECH_B, 0);
+      Serial.print(" ");
+      Serial.print(newPosition);
+      Serial.print(" ");
+      // Serial.print();
+      //Serial.print(millis());
+      Serial.print('>');
+      newData = false;
+    }
 }
