@@ -43,7 +43,7 @@ ACCEL_BUS_ADDRESS = 3
 DB = 'dynamodb'
 REGION_NAME = 'us-east-2'
 ENDPOINT_URL = 'http://dynamodb.us-east-2.amazonaws.com'
-TABLE_NAME = 'Sentinel'
+TABLE_NAME = 'SENTINEL'
 
 # SERIAL BUS CONSTANTS 
 startSentinel = '<'
