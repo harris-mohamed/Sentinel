@@ -1,7 +1,8 @@
 # Project Sentinel: The official Sentinel class
 # Harris M 
-# February 5, 2020
+# March 2, 2020
 
+# AWS library imports 
 from __future__ import print_function 
 from datetime import datetime 
 from boto3.dynamodb.conditions import Key, Attr
@@ -9,6 +10,7 @@ import boto3
 import json 
 import decimal
 
+# Standard library imports
 from time import sleep 
 from datetime import datetime
 import sys
@@ -17,6 +19,7 @@ import time
 import struct
 import numpy as np
 
+# RPI specific imports
 import smbus 
 import serial 
 import sentinel_reference as s
@@ -28,60 +31,25 @@ import KALMAN as kalman
 
 class SENTINEL:
     """ Function declarations for the SENTINEL class """
-    
-    bus = smbus.SMBus(3)
-    # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # sock.connect((s.IP_ADDRESS, s.PORT)) 
-
-    global startSentinel, endSentinel, serialPort, dataStarted, dataBuf, messageComplete
-
-    global serialPort 
-
-    def accel_init(self):
-        """Instantiates the MPU-6050 module 
-
-            Args:
-                None
-            Return:
-                None
-        """
-        self.bus.write_byte_data(s.ACCEL_ADDRESS, s.SMPLRT_DIV, 7)
-        self.bus.write_byte_data(s.ACCEL_ADDRESS, s.PWR_MGMT_1, 1)
-        self.bus.write_byte_data(s.ACCEL_ADDRESS, s.CONFIG, 0)
-        self.bus.write_byte_data(s.ACCEL_ADDRESS, s.GYRO_CONFIG, 24)
-        self.bus.write_byte_data(s.ACCEL_ADDRESS, s.INT_ENABLE, 1)
-
-    def singleScan(self):
-        """Takes a single scan
+      
+    def __init__(self):
+        """Initializes neccesary constants and communication busses
 
         Args:
             None
         Return:
-            The single scan
-        """
-        return s.single_parse() 
-
-    def contScan(self, count):
-        """Takes a specified number of consecutive scans
-
-        Args:
-            The number of consecutive scans to take
-        Return:
-            A list of dictionaries, each dictionary contains a parsed scan 
-        """ 
-        return s.live_parse(count)
-
-    def singleScanPretty(self):
-        """Takes a single scan and prints it for debugging
-
-        Args:
             None
-        Return:
-            The single scan
         """
-        current_scan = s.single_parse()
-        print(current_scan)
-        return current_scan 
+        self.dynamodb = boto3.resource(s.DB, region_name=s.REGION_NAME, endpoint_url=s.ENDPOINT_URL)
+        self.table = self.dynamodb.Table(s.TABLE_NAME)
+        self.dataStarted = False 
+        self.dataBuf = ""
+        self.messageComplete = False
+        self.setupSerial()
+        self.bus = smbus.SMBus(3)
+        self.accel_init()
+        self.A = self.accel_read()
+        self.x = kalman.Gravity([[self.A[0]], [self.A[1]], [self.A[2]]])
 
     def setupSerial(self, baudRate=115200, serialPortName=s.ARDUINO_PORT):
         """Instantiate serial port with Arduino
@@ -92,10 +60,10 @@ class SENTINEL:
             Return:
                 None
         """
-        serialPort = serial.Serial(port= serialPortName, baudrate = baudRate, timeout=0, rtscts=True)
+        # global serialPort
+        self.serialPort = serial.Serial(port=serialPortName, baudrate=baudRate, timeout=0, rtscts=True)
         print("Serial port " + serialPortName + " opened Baudrate " + str(baudRate))
         self.waitForArduino()
-
 
     def waitForArduino(self):
         """Waits for Arduino to connect to Raspberry Pi
@@ -120,22 +88,23 @@ class SENTINEL:
             Return:
                 Either the data buffer, or XXX to indicate failure
         """
-        if serialPort.inWaiting() > 0 and messageComplete == False:
-            x = serialPort.read().decode("utf-8") 
 
-            if dataStarted == True:
-                if x != endSentinel:
-                    dataBuf = dataBuf + x 
+        if self.serialPort.inWaiting() > 0 and self.messageComplete == False:
+            x = self.serialPort.read().decode("utf-8") 
+
+            if self.dataStarted == True:
+                if x != s.endSentinel:
+                    self.dataBuf = self.dataBuf + x 
                 else:
-                    dataStarted = False 
-                    messageComplete = True 
-            elif x == startSentinel:
-                dataBuf = ''
-                dataStarted = True 
+                    self.dataStarted = False 
+                    self.messageComplete = True 
+            elif x == s.startSentinel:
+                self.dataBuf = ''
+                self.dataStarted = True 
 
-        if (messageComplete == True):
-            messageComplete = False 
-            return dataBuf 
+        if (self.messageComplete == True):
+            self.messageComplete = False 
+            return self.dataBuf 
         else: 
             return "XXX"
 
@@ -147,11 +116,36 @@ class SENTINEL:
             Return:
                 None
         """
-        global startSentinel, endSentinel, serialPort 
 
-        stringWithMarkers = (startSentinel)
+        stringWithMarkers = (s.startSentinel)
         stringWithMarkers += stringToSend 
-        stringWithMarkers += (endSentinel)
+        stringWithMarkers += (s.endSentinel)
+
+    def accel_init(self):
+        """Instantiates the MPU-6050 module 
+
+            Args:
+                None
+            Return:
+                None
+        """
+        self.bus.write_byte_data(s.ACCEL_ADDRESS, s.SMPLRT_DIV, 7)
+        self.bus.write_byte_data(s.ACCEL_ADDRESS, s.PWR_MGMT_1, 1)
+        self.bus.write_byte_data(s.ACCEL_ADDRESS, s.CONFIG, 0)
+        self.bus.write_byte_data(s.ACCEL_ADDRESS, s.GYRO_CONFIG, 24)
+        self.bus.write_byte_data(s.ACCEL_ADDRESS, s.INT_ENABLE, 1)
+
+    def singleScanPretty(self):
+        """Takes a single scan and prints it for debugging
+
+        Args:
+            None
+        Return:
+            The single scan
+        """
+        current_scan = self.single_parse()
+        print(current_scan)
+        return current_scan 
 
     def singleScanWithUpload(self):
         """Takes a single scan and uploads it to AWS
@@ -162,8 +156,8 @@ class SENTINEL:
             The single scan
         """
 
-        current_scan = s.single_parse() 
-        s.uploadToAws(current_scan)
+        current_scan = self.single_parse()
+        self.uploadToAws(current_scan)
         return current_scan
 
     def type_conv(self, num, base):
@@ -280,7 +274,7 @@ class SENTINEL:
                 Dictionary of parsed values
         """
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((IP_ADDRESS, PORT))
+        sock.connect((s.IP_ADDRESS, s.PORT))
         sock.send(REQUEST_CONT_SCAN)
 
         scans = []
@@ -350,30 +344,89 @@ class SENTINEL:
         scan.append(nice_timestamp)
 
         initial_parse = self.telegram_parse(scan)
-        # read_serial = ser.readline()
         return initial_parse
 
-    def uploadToAWS(self, telegram):
-
-        def custom_message(self):
-            """Sends a custom message to the LIDAR sensor
+    def uploadToAWS(self, telegram, name):
+        """ Uploads a scan to the AWS database
 
             Args:
-                None
+                A parsed telegram from the sensor 
             Return:
                 None
-            """
+        """
+        if name == "":
+            name = str("Unnamed_" + telegram['Timestamp'])
+        
+        response = self.table.put_item(
+            Item={
+                # 'Time-stamp': str(telegram['Timestamp']),
+                'Time-stamp': name,
+                'Version Number': str(telegram['Version Number']),
+                'Device Number': str(telegram['Device Number']),
+                'Serial Number': str(telegram['Serial Number']),
+                'Device Status': str(telegram['Device Status']),
+                'Telegram Counter': str(telegram['Telegram Counter']),
+                'Scan Counter': str(telegram['Scan Counter']),
+                'Time since start-up': str(telegram['Time since start-up']),
+                'Time of transmission': str(telegram['Time of transmission']),
+                'Scan Frequency': str(telegram['Scan Frequency']),
+                'Measurement Frequency': str(telegram['Measurement Frequency']),
+                'Amount of Encoder': str(telegram['Amount of Encoder']),
+                '16-bit Channels': str(telegram['16-bit Channels']),
+                'Scale Factor': str(telegram['Scale Factor']),
+                'Scale Factor Offset': str(telegram['Scale Factor Offset']),
+                'Start Angle': str(telegram['Start Angle']),
+                'Angular Increment': str(telegram['Angular Increment']),
+                'Quantity': str(telegram['Quantity']),
+                # 'Motor encoder': str(telegram['Motor encoder']),
+                'Timestamp': str(telegram['Timestamp']),
+                'Ax': str(telegram['Ax']),
+                'Ay': str(telegram['Ay']),
+                'Az': str(telegram['Az']),
+                'Gx': str(telegram['Gx']),
+                'Gy': str(telegram['Gy']),
+                'Gz': str(telegram['Gz']),
+                'Measurement': str(telegram['Measurement'])
+            }
+        )
 
-            start = '\x02'
-            end = '\x03'
-            message = input("Enter the custom message here:")
-            custom = start + message + end 
-            custom = str.encode(custom)
-            sock = connect()
-            sock.send(custom)
-            scan = message_collect(sock)
+    def readFromAWS(self, name):
+        """ Grabs all scans associated with a certain name
 
-            print("Output: ", scan)
+            Args:
+                Name we are interested in 
+            Return:
+                A list of dictionaries 
+        """
+
+        output = []
+
+        response = self.table.query(KeyConditionExpression=Key('Time-stamp').eq(name))
+
+        for scan in response['Items']:
+            output.append(scan)
+
+        return output 
+
+    def custom_message(self):
+        """Sends a custom message to the LIDAR sensor
+
+        Args:
+            None
+        Return:
+            None
+        """
+
+        start = '\x02'
+        end = '\x03'
+        message = input("Enter the custom message here:")
+        custom = start + message + end 
+        custom = str.encode(custom)
+        sock = connect()
+        sock.send(custom)
+        scan = message_collect(sock)
+
+        print("Output: ", scan)
 
         
     def read_freq_angle(self):
@@ -391,11 +444,11 @@ class SENTINEL:
         if (len(scan) != 7) or (scan[1] != 'LMPscancfg'):
             print("Something went wrong with the read")
         else:
-            scan_frequency = type_conv(scan[2], 'u32')
-            sector_count = type_conv(scan[3], 'u16')
-            angle_resolution = type_conv(scan[4], 'u32')
-            start_angle = type_conv(scan[5], 's32')
-            stop_angle = type_conv(scan[6], 'u32')
+            scan_frequency = self.type_conv(scan[2], 'u32')
+            sector_count = self.type_conv(scan[3], 'u16')
+            angle_resolution = self.type_conv(scan[4], 'u32')
+            start_angle = self.type_conv(scan[5], 's32')
+            stop_angle = self.type_conv(scan[6], 'u32')
 
             print("Scan frequency is: ", scan_frequency / 100, "hz")
             print("Number of sectors: ", sector_count)
@@ -455,15 +508,6 @@ class SENTINEL:
         else: 
             print("The parameters were written successfully.")
 
-    # def beginArduinoComm():
-    #     """Starts communicating with the Arduino
-
-    #         Args:
-    #             None
-    #         Return:
-    #             None
-    #     """
-        
     def read_raw_data(self, addr):
         """Instantiates the MPU-6050 module 
 
@@ -534,48 +578,37 @@ class SENTINEL:
             elif (curr == 'q'):
                 break 
 
-    def __init__(self):
-        """Initializes neccesary constants and communication busses
-
-        Args:
-            None
-        Return:
-            None
-        """
-        dynamodb = boto3.resource(s.DB, region_name=s.REGION_NAME, endpoint_url=s.ENDPOINT_URL)
-        table = dynamodb.Table(s.TABLE_NAME)
-        self.setupSerial()
-        self.accel_init()
-        self.A = self.accel_read()
-        self.x = kalman.Gravity([[self.A[0]], [self.A[1]], [self.A[2]]])
+    
 
 sentinel = SENTINEL()
-count = 0
-prevTime = time.time() 
 actualTime = time.time()
-P = np.eye(3)
 
+# KALMAN FILTER stuff
+P = np.eye(3)
 Qk = np.diag([100, 100, 100])
 Rk = np.diag([1, 1, 1])
 
-while True:
-    arduinoReply = s.recvLikeArduino()
-    A = sentinel.accel_read()
-    kalman.Predict(sentinel.x , P, [[A[3]], [A[4]], [A[5]]], time.time() - actualTime, Qk)
-    actualTime = time.time()
-    # print(arduinoReply)
-    # print(sentinel.single_parse())
+curr = sentinel.singleScanPretty()
+name = input("Enter a name for the current scan\n")
+sentinel.uploadToAWS(curr, name)
+# yote = sentinel.readFromAWS('Yeet')
+# print(type(yote))
+# print(yote)
 
-    if not (arduinoReply == 'XXX'):
-        yeet = arduinoReply.split(" ")
-        yeet = yeet[-2]
-        curr = sentinel.single_parse()
-        curr['Motor encoder'] = yeet
+# LOOP
+# while True:
+#     sentinel.sendToArduino('g')
+#     arduinoReply = sentinel.recvLikeArduino()
+#     A = sentinel.accel_read()
+#     kalman.Predict(sentinel.x , P, [[A[3]], [A[4]], [A[5]]], time.time() - actualTime, Qk)
+#     actualTime = time.time()
+#     # print(arduinoReply)
+#     # print(sentinel.single_parse())
+
+#     if not (arduinoReply == 'XXX'):
+#         yeet = arduinoReply.split(" ")
+#         yeet = yeet[-2]
+#         curr = sentinel.single_parse()
+#         curr['Motor encoder'] = yeet
         
-        print(curr)
-
-
-    if time.time() - prevTime > 1.0:
-        s.sendToArduino('g')
-        prevTime = time.time()
-        count += 1
+#         print(curr)

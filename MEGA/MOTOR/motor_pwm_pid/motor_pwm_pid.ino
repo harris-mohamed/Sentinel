@@ -87,6 +87,6 @@ void loop() {
   
   
    analogWrite(reversePin, 0);
-   analogWrite(forwardPin, Output);
+   analogWrite(forwardPin, 0);
 
 }
