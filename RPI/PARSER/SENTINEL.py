@@ -360,12 +360,13 @@ class SENTINEL:
         response = self.table.put_item(
             Item={
                 # 'Time-stamp': str(telegram['Timestamp']),
-                'Time-stamp': name,
+                'Name': name,
+                'Count': str(telegram['Telegram Counter']),
                 'Version Number': str(telegram['Version Number']),
                 'Device Number': str(telegram['Device Number']),
                 'Serial Number': str(telegram['Serial Number']),
                 'Device Status': str(telegram['Device Status']),
-                'Telegram Counter': str(telegram['Telegram Counter']),
+                # 'Telegram Counter': str(telegram['Telegram Counter']),
                 'Scan Counter': str(telegram['Scan Counter']),
                 'Time since start-up': str(telegram['Time since start-up']),
                 'Time of transmission': str(telegram['Time of transmission']),
@@ -401,7 +402,7 @@ class SENTINEL:
 
         output = []
 
-        response = self.table.query(KeyConditionExpression=Key('Time-stamp').eq(name))
+        response = self.table.query(KeyConditionExpression=Key('Name').eq(name))
 
         for scan in response['Items']:
             output.append(scan)
