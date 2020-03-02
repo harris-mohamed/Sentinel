@@ -24,7 +24,7 @@ void setup() {
   pinMode(ROBOT_MOTOR_MECH_A, OUTPUT);
   pinMode(ROBOT_MOTOR_MECH_B, OUTPUT);
   Serial.begin(115200);
-  // Serial.println("Done initializing!");
+  Serial.println("<Arduino is ready>");
 
   analogWrite(ROBOT_MOTOR_MECH_A, 0);
   analogWrite(ROBOT_MOTOR_MECH_B, 0);
