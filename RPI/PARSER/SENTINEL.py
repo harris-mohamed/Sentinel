@@ -563,7 +563,7 @@ while True:
     A = sentinel.accel_read()
     kalman.Predict(sentinel.x , P, [[A[3]], [A[4]], [A[5]]], time.time() - actualTime, Qk)
     actualTime = time.time()
-    print(arduinoReply)
+    # print(arduinoReply)
     # print(sentinel.single_parse())
 
     if not (arduinoReply == 'XXX'):
@@ -571,6 +571,7 @@ while True:
         yeet = yeet[-2]
         curr = sentinel.single_parse()
         curr['Motor encoder'] = yeet
+        
         print(curr)
 
 

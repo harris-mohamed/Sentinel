@@ -32,9 +32,9 @@ bus = smbus.SMBus(3)
 # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # sock.connect((s.IP_ADDRESS, s.PORT)) 
 
-global startSentinel, endSentinel, serialPort, dataStarted, dataBuf, messageComplete
+# global startSentinel, endSentinel, serialPort, dataStarted, dataBuf, messageComplete
 
-global serialPort 
+# global serialPort 
 
 def accel_init():
     """Instantiates the MPU-6050 module 
@@ -44,11 +44,11 @@ def accel_init():
         Return:
             None
     """
-    self.bus.write_byte_data(s.ACCEL_ADDRESS, s.SMPLRT_DIV, 7)
-    self.bus.write_byte_data(s.ACCEL_ADDRESS, s.PWR_MGMT_1, 1)
-    self.bus.write_byte_data(s.ACCEL_ADDRESS, s.CONFIG, 0)
-    self.bus.write_byte_data(s.ACCEL_ADDRESS, s.GYRO_CONFIG, 24)
-    self.bus.write_byte_data(s.ACCEL_ADDRESS, s.INT_ENABLE, 1)
+    bus.write_byte_data(s.ACCEL_ADDRESS, s.SMPLRT_DIV, 7)
+    bus.write_byte_data(s.ACCEL_ADDRESS, s.PWR_MGMT_1, 1)
+    bus.write_byte_data(s.ACCEL_ADDRESS, s.CONFIG, 0)
+    bus.write_byte_data(s.ACCEL_ADDRESS, s.GYRO_CONFIG, 24)
+    bus.write_byte_data(s.ACCEL_ADDRESS, s.INT_ENABLE, 1)
 
 def singleScan():
     """Takes a single scan
@@ -58,7 +58,7 @@ def singleScan():
     Return:
         The single scan
     """
-    return s.single_parse() 
+    return single_parse() 
 
 def contScan(count):
     """Takes a specified number of consecutive scans
@@ -68,7 +68,7 @@ def contScan(count):
     Return:
         A list of dictionaries, each dictionary contains a parsed scan 
     """ 
-    return s.live_parse(count)
+    return live_parse(count)
 
 def singleScanPretty():
     """Takes a single scan and prints it for debugging
@@ -78,10 +78,15 @@ def singleScanPretty():
     Return:
         The single scan
     """
-    current_scan = s.single_parse()
+    current_scan = single_parse()
     print(current_scan)
     return current_scan 
 
+startSentinel = '<'
+endSentinel = '>'
+dataStarted = False 
+dataBuf = ''
+messageComplete = False
 def setupSerial(baudRate=115200, serialPortName=s.ARDUINO_PORT):
     """Instantiate serial port with Arduino
 
@@ -94,7 +99,7 @@ def setupSerial(baudRate=115200, serialPortName=s.ARDUINO_PORT):
     global serialPort
     serialPort = serial.Serial(port= serialPortName, baudrate = baudRate, timeout=0, rtscts=True)
     print("Serial port " + serialPortName + " opened Baudrate " + str(baudRate))
-    self.waitForArduino()
+    waitForArduino()
 
 
 def waitForArduino():
@@ -108,7 +113,7 @@ def waitForArduino():
     print("Waiting for Arduino to reset")
     msg = ""
     while msg.find("Arduino is ready") == -1:
-        msg = self.recvLikeArduino() 
+        msg = recvLikeArduino() 
         if not (msg == 'XXX'):
             print(msg)
 
@@ -153,6 +158,7 @@ def sendToArduino(stringToSend):
     stringWithMarkers = (startSentinel)
     stringWithMarkers += stringToSend 
     stringWithMarkers += (endSentinel)
+    serialPort.write(stringWithMarkers.encode('utf-8'))
 
 def singleScanWithUpload():
     """Takes a single scan and uploads it to AWS
@@ -163,8 +169,8 @@ def singleScanWithUpload():
         The single scan
     """
 
-    current_scan = s.single_parse() 
-    s.uploadToAws(current_scan)
+    current_scan = single_parse() 
+    uploadToAws(current_scan)
     return current_scan
 
 def type_conv(num, base):
@@ -350,7 +356,7 @@ def single_parse():
 
     scan.append(nice_timestamp)
 
-    initial_parse = self.telegram_parse(scan)
+    initial_parse = telegram_parse(scan)
     # read_serial = ser.readline()
     return initial_parse
 
@@ -473,8 +479,8 @@ def read_raw_data(addr):
         Return:
             None
     """
-    high = bus.read_byte_data(ACCEL_ADDRESS, addr)
-    low = bus.read_byte_data(ACCEL_ADDRESS, addr + 1)
+    high = bus.read_byte_data(s.ACCEL_ADDRESS, addr)
+    low = bus.read_byte_data(s.ACCEL_ADDRESS, addr + 1)
 
     value = ((high << 8) | low)
 
@@ -493,21 +499,21 @@ def accel_read():
             all 3 axes. Acceleration is in m/s, 
             gyro is in degrees/s
     """
-    acc_x = read_raw_data(ACCEL_XOUT_H)
-    acc_y = read_raw_data(ACCEL_YOUT_H)
-    acc_z = read_raw_data(ACCEL_ZOUT_H)
+    acc_x = read_raw_data(s.ACCEL_XOUT_H)
+    acc_y = read_raw_data(s.ACCEL_YOUT_H)
+    acc_z = read_raw_data(s.ACCEL_ZOUT_H)
 
-    gyro_x = read_raw_data(GYRO_XOUT_H)
-    gyro_y = read_raw_data(GYRO_YOUT_H)
-    gyro_z = read_raw_data(GYRO_ZOUT_H)
+    gyro_x = read_raw_data(s.GYRO_XOUT_H)
+    gyro_y = read_raw_data(s.GYRO_YOUT_H)
+    gyro_z = read_raw_data(s.GYRO_ZOUT_H)
 
-    Ax = acc_x / ACCEL_CONSTANT
-    Ay = acc_y / ACCEL_CONSTANT
-    Az = acc_z / ACCEL_CONSTANT
+    Ax = acc_x / s.ACCEL_CONSTANT
+    Ay = acc_y / s.ACCEL_CONSTANT
+    Az = acc_z / s.ACCEL_CONSTANT
 
-    Gx = gyro_x / GYRO_CONSTANT
-    Gy = gyro_y / GYRO_CONSTANT
-    Gz = gyro_z / GYRO_CONSTANT
+    Gx = gyro_x / s.GYRO_CONSTANT
+    Gy = gyro_y / s.GYRO_CONSTANT
+    Gz = gyro_z / s.GYRO_CONSTANT
     
     return Ax, Ay, Az, Gx, Gy, Gz
 
@@ -543,7 +549,8 @@ accel_init()
 A = accel_read()
 x = kalman.Gravity([[A[0]], [A[1]], [A[2]]])
 
-sentinel = SENTINEL()
+
+# sentinel = SENTINEL()
 count = 0
 prevTime = time.time() 
 actualTime = time.time()
@@ -552,23 +559,42 @@ P = np.eye(3)
 Qk = np.diag([100, 100, 100])
 Rk = np.diag([1, 1, 1])
 
+next_angle = 20
+
 while True:
     arduinoReply = recvLikeArduino()
     A = accel_read()
-    kalman.Predict(x , P, [[A[3]], [A[4]], [A[5]]], time.time() - actualTime, Qk)
+    (x, P) = kalman.Predict(x , P, [[A[3]], [A[4]], [A[5]]], time.time() - actualTime, Qk)
     actualTime = time.time()
-    print(arduinoReply)
+    sendToArduino(str(next_angle))
+    # print(arduinoReply)
     # print(sentinel.single_parse())
 
     if not (arduinoReply == 'XXX'):
         yeet = arduinoReply.split(" ")
         yeet = yeet[-2]
         curr = single_parse()
+        (x, P) = kalman.Correct(x, P, (float(yeet) * np.pi)/180.00, Rk)
         curr['Motor encoder'] = yeet
-        print(curr)
-
-
-    if time.time() - prevTime > 1.0:
-        sendToArduino('g')
-        prevTime = time.time()
-        count += 1
+        # next_angle = yeet
+        curr['Euler'] = x
+        next_angle = float(yeet) + 20
+        B = accel_read() 
+        y = kalman.Gravity([[B[0]], [B[1]], [B[2]]])
+        curr['Gravity'] = y
+        print(str(next_angle))
+        # next_angle = float(yeet) + 20
+        # print(next_angle)
+        # print("Yeet")
+        sendToArduino(str(next_angle))
+    
+   # if time.time() - prevTime > 1.0:
+   #     # sendToArduino('g')
+   #     # next_angle = next_angle + 20
+   #     if (next_angle == 20):
+   #         sendToArduino(str(20))
+   #     else:
+   #         sendToArduino(str(next_angle))
+   #     # print(next_angle)
+   #     prevTime = time.time()
+   #     count += 1
