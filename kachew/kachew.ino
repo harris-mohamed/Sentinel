@@ -3,24 +3,20 @@
 #define ROBOT_MOTOR_MECH_A 7
 #define ROBOT_MOTOR_MECH_B 6
 
-const double Kp = 0.5; 
-const double Ki = 7.0;
-const double Kd = 0.;
+const double Kp = 1.55;
+const double Ki = 2.5;
+const double Kd = 0.35;
 
 double Setpoint, actual_rpm, Output;
 double newPosition = 0.0;
 PID myPID(&newPosition, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 Encoder motor(20, 21);
 float oldPosition = -999;
-
-const byte numChars = 64; 
-char receivedChars[numChars];
-
-boolean newData= false; 
+unsigned long tinit = millis();
 
 void setup() {
   newPosition = 0;
-  Setpoint = newPosition;
+  Setpoint = 108.0;
   myPID.SetMode(AUTOMATIC);
   pinMode(ROBOT_MOTOR_MECH_A, OUTPUT);
   pinMode(ROBOT_MOTOR_MECH_B, OUTPUT);
@@ -31,88 +27,31 @@ void setup() {
   delay(200);
   digitalWrite(LED_BUILTIN, HIGH);
 
-  
-//
-//  Serial.println("<Arduino is ready>");
+
+  //
+  //  Serial.println("<Arduino is ready>");
 }
 
 void loop() {
   newPosition = motor.read();
-  if (newPosition != oldPosition){
+  if (newPosition != oldPosition) {
     oldPosition = newPosition;
-    }
-//  recvWithStartEndMarkers();
-  Setpoint = oldPosition + 20.00;
-//  Serial.println(Setpoint);
-  Serial.print("Setpoint: ");
-  Serial.print(Setpoint);
-  Serial.print(" Output: ");
-  Serial.print(Output);
-  Serial.print(" Current Pos: ");
-  Serial.println(newPosition);
-  analogWrite(ROBOT_MOTOR_MECH_A, 0);
-  analogWrite(ROBOT_MOTOR_MECH_B, 0);
-  delay(2000);
-  myPID.Compute();
-//  replyToPython();
   }
-
-void recvWithStartEndMarkers() {
-  static boolean recvInProgress = false; 
-  static byte ndx = 0;
-  char startMarker = '<';
-  char endMarker = '>';
-  char rc; 
-
-  while (Serial.available() > 0 && newData == false) {
-    rc = Serial.read();
-
-    if (recvInProgress == true) {
-      if (rc != endMarker) {
-        receivedChars[ndx] = rc; 
-        ndx++;
-        if (ndx >= numChars) {
-          ndx = numChars - 1;
-          }
-        }
-        else {
-          receivedChars[ndx] = '\0';
-          recvInProgress = false; 
-          ndx = 0;
-          newData = true;
-          }
-      }
-
-      else if (rc == startMarker) {
-        recvInProgress = true;
-        }
-    }
-  }
-
- void replyToPython() {
-    if (newData == true){
-      Serial.print("<This just in ...");
-      Serial.print(receivedChars);
-      if (receivedChars[0] == 'g'){
-	analogWrite(ROBOT_MOTOR_MECH_A, 0);
-	analogWrite(ROBOT_MOTOR_MECH_B, 180);
-	delay(200);
-	}
-	analogWrite(ROBOT_MOTOR_MECH_A, 0);
-	analogWrite(ROBOT_MOTOR_MECH_B, 0);
- if (receivedChars[0] != 'g'){
-//  Setpoint +=20;
-  myPID.Compute();
+  //  recvWithStartEndMarkers();
+  //  Serial.println(Setpoint);
+//  Serial.print("Setpoint ");
+//  Serial.print(Setpoint);
+//  Serial.print(" Output ");
+//  Serial.print(Output);
+//  Serial.print(" CurrentPos ");
+//  Serial.println(newPosition);
+  Serial.println(newPosition-Setpoint);
   analogWrite(ROBOT_MOTOR_MECH_A, 0);
   analogWrite(ROBOT_MOTOR_MECH_B, Output);
+  myPID.Compute();
+  if (millis()-tinit>1000) {
+      Setpoint += 108.0;
+      tinit = millis();
   }
- Serial.print(" ");
-  Serial.print(newPosition);
-      Serial.print(" ");
-      // Serial.print();
-      //Serial.print(millis());
-      Serial.print('>');
-      digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-      newData = false;
-    }
-      }
+  //  replyToPython();
+}
