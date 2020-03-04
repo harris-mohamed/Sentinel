@@ -72,8 +72,8 @@ def Gravity(acc):
     ax = acc[0][0]
     ay = acc[1][0]
     az = acc[2][0]
-    phi = np.arctan(-ay/az)
-    theta = np.arctan(ax*np.sin(phi)/ay)
+    phi = np.arctan2(-ay,az)
+    theta = np.arctan2(ax*np.sin(phi),ay)
     psi = 0
     xk_estimate = np.asarray([[phi],[theta],[psi]])
     return(xk_estimate)
@@ -83,8 +83,4 @@ if __name__=="__main__":
     Pk = [[0,0,0],[0,0,0],[0,0,0]]
     omega = [[0.4],[0.4],[0.4]]
     dt = 0.1
-    for angle in range(0,10):
-        theta_m = angle*0.1
-        (xk, Pk) = KALMAN(xk, Pk, theta_m, omega, dt)
-        print(xk)
-        print(Pk)
+    Gravity(xk)
