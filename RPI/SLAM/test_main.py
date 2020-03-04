@@ -45,7 +45,6 @@ parsed_log_file = '2020-1-9_22-28-2-DIAGNOSTIC_RUN.txt'
 ##parsed_log_file = '2020-1-9_22-59-1-BALLRAISEDBOX.txt'
 ##parsed_log_file = '2020-1-9_22-58-33-SNOWMAN.txt'
 
-parsed_log_file = sample_logs + parsed_log_file
 
 x = [[0.0], [0.0], [0.0], [6.0], [3.0], [1.0]]
 dx_sum = np.zeros((3,1))
@@ -140,18 +139,18 @@ for index in range(0, len(frames), 1):
 ##    Landmark_Pairs_filter = RANSAC.PairLandmarks(Landmarks_New_filter, Landmark_Positions, x, P)
 ##    (x, P) = EKF.EKF(x, dx_sum, P, Landmark_Positions, Landmarks_New_filter, Landmark_Pairs_filter)
 ##
-    print("Plotting Points and Landmarks...")
-    fig = plt.figure()
-    plt.clf()
-    ax = Axes3D(fig)
-    ax.scatter(xs, ys, zs, s=1, marker='o', color='r')
+    # print("Plotting Points and Landmarks...")
+    # fig = plt.figure()
+    # plt.clf()
+    # ax = Axes3D(fig)
+    # ax.scatter(xs, ys, zs, s=1, marker='o', color='r')
 ##    ax.scatter(xfs, yfs, zfs, s=1, marker='x', color='b')
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    ax.set_xlim3d(-3000, 3000)
-    ax.set_ylim3d(-3000, 3000)
+    # ax.set_xlabel('X')
+    # ax.set_ylabel('Y')
+    # ax.set_zlabel('Z')
+    # ax.set_xlim3d(-3000, 3000)
+    # ax.set_ylim3d(-3000, 3000)
 ##    ax.set_zlim3d(-2000, 2000)
-    RANSAC.plotLSRPs(ax, LSRP_list, ymax=7000)
-    ax.view_init(45, -90)
-    plt.show(False)
+    # RANSAC.plotLSRPs(ax, LSRP_list, ymax=7000)
+    # ax.view_init(45, -90)
+    # plt.show(False)

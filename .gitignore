@@ -1,4 +1,4 @@
-# IGNORE LIST: As of 12/19, ignores for Eagle, Matlab, AngularJS, IntelliJ, and Python.
+# IGNORE LIST: As of 12/19, ignores for Eagle, Matlab, AngularJS, IntelliJ, Electron, and Python.
 
 # EAGLE BACKUPS 
 *.s#?
