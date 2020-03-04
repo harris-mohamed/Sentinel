@@ -21,7 +21,7 @@ S_LIM = 100000 #mm, half the length of a side of the cube to draw around the ran
 
 LSRP_list = []
 # Log file locations 
-sample_logs = '../../sample_logs/'
+sample_logs = '../../../sample_logs/'
 #single_scan = '../../sample_logs/Static-sweep0_11-26-19.log'
 #single_scan = '../../sample_logs/Static-sweep1_11-26-19.log'
 ##single_scan = '../../sample_logs/Static-sweep_11-26-19.log'
