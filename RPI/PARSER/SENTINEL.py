@@ -91,7 +91,7 @@ class SENTINEL:
 
         if self.serialPort.inWaiting() > 0 and self.messageComplete == False:
             x = self.serialPort.read().decode("utf-8") 
-
+        
             if self.dataStarted == True:
                 if x != s.endSentinel:
                     self.dataBuf = self.dataBuf + x 
@@ -120,6 +120,8 @@ class SENTINEL:
         stringWithMarkers = (s.startSentinel)
         stringWithMarkers += stringToSend 
         stringWithMarkers += (s.endSentinel)
+
+        self.serialPort.write(stringWithMarkers.encode('utf-8'))
 
     def accel_init(self):
         """Instantiates the MPU-6050 module 
@@ -589,27 +591,45 @@ P = np.eye(3)
 Qk = np.diag([100, 100, 100])
 Rk = np.diag([1, 1, 1])
 
-curr = sentinel.singleScanPretty()
-name = input("Enter a name for the current scan\n")
-sentinel.uploadToAWS(curr, name)
+# curr = sentinel.singleScanPretty()
+# name = input("Enter a name for the current scan\n")
+# sentinel.uploadToAWS(curr, name)
 # yote = sentinel.readFromAWS('Yeet')
 # print(type(yote))
 # print(yote)
 
-# LOOP
-# while True:
-#     sentinel.sendToArduino('g')
-#     arduinoReply = sentinel.recvLikeArduino()
-#     A = sentinel.accel_read()
-#     kalman.Predict(sentinel.x , P, [[A[3]], [A[4]], [A[5]]], time.time() - actualTime, Qk)
-#     actualTime = time.time()
-#     # print(arduinoReply)
-#     # print(sentinel.single_parse())
+count = 0
 
-#     if not (arduinoReply == 'XXX'):
-#         yeet = arduinoReply.split(" ")
-#         yeet = yeet[-2]
-#         curr = sentinel.single_parse()
-#         curr['Motor encoder'] = yeet
+sentinel.sendToArduino('g')
+# LOOP
+while True:
+
+    arduinoReply = sentinel.recvLikeArduino()
+
+    # print(arduinoReply)
+    if arduinoReply != 'XXX' and arduinoReply == 'D':
+        A = sentinel.accel_read()
+        kalman.Predict(sentinel.x , P, [[A[3]], [A[4]], [A[5]]], time.time() - actualTime, Qk)
+        actualTime = time.time()
+        count = count + 1 
+        # time.sleep(1)
+        sentinel.sendToArduino('g')
+        print(count)
+        if (count == 6):
+            break
+    
+    # print(arduinoReply)
+    # print(sentinel.single_parse())
+    # if (arduinoReply == 'XXX'):
+    #     print(arduinoReply)
+    #     break
+
+    # if (arduinoReply != 'XXX'):
+    #     yeet = arduinoReply.split(" ")
+    #     yeet = yeet[-2]
+    #     curr = sentinel.single_parse()
+    #     curr['Motor encoder'] = yeet
+    #     print(arduinoReply)
+    #     break
         
-#         print(curr)
+        # print(curr)

@@ -11,6 +11,7 @@
    ---------------------------------------------------------- */
 #include <Encoder.h>
 #include <EEPROM.h>
+#include <PID_v1.h>
 
 /* ----------------------------------------------------------
        PINS and CONSTANTS
@@ -36,6 +37,10 @@
 #define NUM_CHARS 64 
 #define LED LED_BUILTIN 
 
+#define Kp 1.55 
+#define Ki 2.5 
+#define Kd 0.35
+
 /* ----------------------------------------------------------
        GLOBAL ARRAYS/Variables
    ---------------------------------------------------------- */
@@ -43,12 +48,15 @@ long oldPosition_motorRight  = -999;
 long oldPosition_motorLeft  = -999;
 long oldPosition_motorMech  = -999; 
 float rev_count_motorRight, rev_count_motorLeft, rev_count_motorMech;
-float newPosition_motorLeft, newPosition_motorRight, newPosition_motorMech;
+double  newPosition_motorLeft, newPosition_motorRight, newPosition_motorMech;
 float deg_motorRight, deg_motorLeft, def_motorMech, deg; 
 float motorLeft_init, motorRight_init, motorMech_init;
 unsigned long t; 
 char receivedMessage[NUM_CHARS];
 bool newData = false; 
+
+double Setpoint, actual_rpm, Output; 
+PID myPID(&newPosition_motorMech, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 
 /* ----------------------------------------------------------
        FUNCTIONS
@@ -59,6 +67,7 @@ void EEPROM_clear();
 void EEPROM_write(int index, int val);
 void recvFromRPI();
 void replyToRPI();
+void anothaReplyToRPI();
 
 // Instantiate encoders
 Encoder motorLeft(2, 3);
@@ -106,6 +115,11 @@ void setup() {
 
   long motorMech_cat = (((long)motorMech_e_four << 24) | ((long)motorMech_e_three << 16) | ((long)motorMech_e_two << 8) | (long)motorMech_e_one);
   motorMech_init = *(float*)&motorMech_cat;
+
+  // Initialize PID 
+  Setpoint = 0;
+  myPID.SetMode(AUTOMATIC);
+  
 
   Serial.println("<Arduino is ready>");
   digitalWrite(LED, LOW);
@@ -205,6 +219,10 @@ void loop() {
 
   recvFromRPI();
   replyToRPI();
+
+  if (SetPoint <= newPosition_motorMech){
+      anothaReplyToRPI();
+  }
 }
 
 /*--------------------------------------------------
@@ -320,19 +338,29 @@ void recvFromRPI(){
    ---------------------------------------------------------- */
 void replyToRPI(){
   if (newData == true){
-    Serial.print("<This just in ...");
-    Serial.print(receivedMessage);
       if (receivedMessage[0] == 'g'){
-        analogWrite(ROBOT_MOTOR_MECH_A, 0);
-        analogWrite(ROBOT_MOTOR_MECH_B, 180);
-        delay(100);
-        analogWrite(ROBOT_MOTOR_MECH_A, 0);
-        analogWrite(ROBOT_MOTOR_MECH_B, 0);
+        Setpoint += 108.0;
       }
+      Serial.print("<");
       Serial.print(" ");
       Serial.print(newPosition_motorMech);
       Serial.print(" ");
       Serial.print('>');
       newData = false;
     }
+    myPID.Compute(); 
+    analogWrite(ROBOT_MOTOR_MECH_A, 0);
+    analogWrite(ROBOT_MOTOR_MECH_B, Output);
+}
+
+/* ----------------------------------------------------------
+   Function:      anothaReplyToRPI
+   Description:   Replies to the RPI on the serial bus 
+   Inputs:        None
+   Outputs:       None
+   ---------------------------------------------------------- */
+void anothaReplyToRPI(){
+  Serial.print("<");
+  Serial.print("D");
+  Serial.print(">");
 }
