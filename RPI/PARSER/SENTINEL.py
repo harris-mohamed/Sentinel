@@ -612,6 +612,10 @@ while True:
         kalman.Predict(sentinel.x , P, [[A[3]], [A[4]], [A[5]]], time.time() - actualTime, Qk)
         actualTime = time.time()
         count = count + 1 
+        scan = sentinel.single_parse()
+        scan['Rk'] = Rk
+        scan['Qk'] = Qk 
+        scan['P'] = p
         # time.sleep(1)
         sentinel.sendToArduino('g')
         print(count)
