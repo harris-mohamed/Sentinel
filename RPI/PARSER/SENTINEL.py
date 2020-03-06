@@ -601,14 +601,17 @@ class SENTINEL:
         
         while True:
             k = cv2.waitKey(1) & 0xFF
-
+            self.A = self.accel_read()
+            kalman.Predict(self.x , P, [[self.A[3]], [self.A[4]], [self.A[5]]], time.time() - actualTime, Qk) #This line should read the gyroscope while the motor is spinning
+            actualTime = time.time()
+            
             if k == q:
                 break 
             else:
                 arduinoReply = self.recvLikeArduino()
                 if arduinoReply != 'XXX' and arduinoReply == 'D':
-                    self.A = self.accel_read()
-                    kalman.Predict(self.x , P, [[self.A[3]], [self.A[4]], [self.A[5]]], time.time() - actualTime, Qk)
+                    theta_motor = 1#This line needs to be the value from the motor encoder that the arduino sends to the RPi.
+                    kalman.Correct(self.x , P, theta_motor, Rk) #When the scan is about to be taken, this line should be executed.
                     actualTime = time.time()
                     self.counter = self.counter + 1 
                     scan = self.single_parse()
