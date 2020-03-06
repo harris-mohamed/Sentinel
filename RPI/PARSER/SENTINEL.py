@@ -624,12 +624,13 @@ class SENTINEL:
     
 
 sentinel = SENTINEL()
-actualTime = time.time()
+sentinel.mainLoop(6);
+# actualTime = time.time()
 
 # KALMAN FILTER stuff
-P = np.eye(3)
-Qk = np.diag([100, 100, 100])
-Rk = np.diag([1, 1, 1])
+# P = np.eye(3)
+# Qk = np.diag([100, 100, 100])
+# Rk = np.diag([1, 1, 1])
 
 # curr = sentinel.singleScanPretty()
 # name = input("Enter a name for the current scan\n")
@@ -638,29 +639,29 @@ Rk = np.diag([1, 1, 1])
 # print(type(yote))
 # print(yote)
 
-count = 0
+# count = 0
 
-sentinel.sendToArduino('g')
-# LOOP
-while True:
+# sentinel.sendToArduino('g')
+# # LOOP
+# while True:
 
-    arduinoReply = sentinel.recvLikeArduino()
+#     arduinoReply = sentinel.recvLikeArduino()
 
-    # print(arduinoReply)
-    if arduinoReply != 'XXX' and arduinoReply == 'D':
-        A = sentinel.accel_read()
-        kalman.Predict(sentinel.x , P, [[A[3]], [A[4]], [A[5]]], time.time() - actualTime, Qk)
-        actualTime = time.time()
-        count = count + 1 
-        scan = sentinel.single_parse()
-        scan['Rk'] = Rk
-        scan['Qk'] = Qk 
-        scan['P'] = p
-        # time.sleep(1)
-        sentinel.sendToArduino('g')
-        print(count)
-        if (count == 6):
-            break
+#     # print(arduinoReply)
+#     if arduinoReply != 'XXX' and arduinoReply == 'D':
+#         A = sentinel.accel_read()
+#         kalman.Predict(sentinel.x , P, [[A[3]], [A[4]], [A[5]]], time.time() - actualTime, Qk)
+#         actualTime = time.time()
+#         count = count + 1 
+#         scan = sentinel.single_parse()
+#         scan['Rk'] = Rk
+#         scan['Qk'] = Qk 
+#         scan['P'] = p
+#         # time.sleep(1)
+#         sentinel.sendToArduino('g')
+#         print(count)
+#         if (count == 6):
+#             break
     
     # print(arduinoReply)
     # print(sentinel.single_parse())
