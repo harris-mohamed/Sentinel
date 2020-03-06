@@ -18,6 +18,7 @@ import socket
 import time
 import struct
 import numpy as np
+import opencv2
 
 # RPI specific imports
 import smbus 
@@ -580,6 +581,45 @@ class SENTINEL:
                 ser.write('D')
             elif (curr == 'q'):
                 break 
+
+    def mainLoop(self, count):
+        """Runs the main loop of Sentinel
+
+        Args:
+            count: How many scans we want
+        Return:
+            None
+        """
+
+        actualTime = time.time() 
+
+        self.P = np.eye(3)
+        self.Qk = np.diag([100, 100, 100])
+        self.Rk = np.diag([1, 1, 1])
+        self.counter = 0
+        self.sendToArduino('g')
+        
+        while True:
+            k = cv2.waitKey(1) & 0xFF
+
+            if k == q:
+                break 
+            else:
+                arduinoReply = self.recvLikeArduino()
+                if arduinoReply != 'XXX' and arduinoReply == 'D':
+                    self.A = self.accel_read()
+                    kalman.Predict(self.x , P, [[self.A[3]], [self.A[4]], [self.A[5]]], time.time() - actualTime, Qk)
+                    actualTime = time.time()
+                    self.counter = self.counter + 1 
+                    scan = self.single_parse()
+                    scan['Rk'] = Rk
+                    scan['Qk'] = Qk 
+                    scan['P'] = p
+                    # time.sleep(1)
+                    self.sendToArduino('g')
+                    print(count)
+                    if (count == 6):
+                        break
 
     
 
