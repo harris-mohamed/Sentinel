@@ -87,6 +87,13 @@ def readFromAWS(name):
 # name = input("Enter the name of the scan: ")
 # count = input("Enter the count of the scan: ")
 # uploadToAWS(name, count)
+<<<<<<< Updated upstream
 if __name__=="__main__":
     output = readFromAWS('Test')
     print(output)
+=======
+
+output = readFromAWS('kalman_100')
+for i in output:
+    print(i)
+>>>>>>> Stashed changes
