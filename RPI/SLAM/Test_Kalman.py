@@ -9,10 +9,12 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import time
 import RANSAC.RANSAC as RANSAC
+from numpy import array
 ##import PARSER
 import EKF.EKF as EKF
 import numpy as np
 import KALMAN
+import quick
 ##import ANGLEPARSE
 X = 10 #mm, the maximum distance a point must be from an LSRP in RANSAC to be considered in tolerance.
 C = 800 #Consensus for RANSAC, number of points that must pass the tolerance check of the LSRP
@@ -20,9 +22,13 @@ N = 100 #Max number of trials in RANSAC before ending
 S = 50 #Number of points to sample for RANSAC
 S_LIM = 100 #mm, half the length of a side of the cube to draw around the randomly sampled point in RANSAC
 
+DATABASE = "kalman_10v1"
+
+res = quick.readFromAWS("kalman_10v1")
+print(res[0].keys())
 LSRP_list = []
 # Log file locations 
-sample_logs = '../../../sample_logs/'
+##sample_logs = '../../../sample_logs/'
 #single_scan = '../../sample_logs/Static-sweep0_11-26-19.log'
 #single_scan = '../../sample_logs/Static-sweep1_11-26-19.log'
 ##single_scan = '../../sample_logs/Static-sweep_11-26-19.log'
@@ -45,11 +51,11 @@ sample_logs = '../../../sample_logs/'
 ##parsed_log_file = '2020-1-9_22-57-23-BALLBOX.txt'
 ##parsed_log_file = '2020-1-9_22-59-1-BALLRAISEDBOX.txt'
 ##parsed_log_file = '2020-1-9_22-58-33-SNOWMAN.txt'p
-
-parsed_log_file = 'test_2-23-20.txt'
+####
+##parsed_log_file = 'test_2-23-20.txt'
 ##parsed_log_file = 'test0_2-23-20.txt'
 ##parsed_log_file = 'test1_2-23-20.txt'
-parsed_log_file = sample_logs + parsed_log_file
+##parsed_log_file = sample_logs + parsed_log_file
 
 x = [[0.0], [0.0], [0.0], [6.0], [3.0], [1.0]]
 dx_sum = np.zeros((3,1))
@@ -66,70 +72,62 @@ dt2 = 0.0 #In reality, these would be grabbed from the Arduino.
 ##angle_p4 = ANGLEPARSE.angle_parser(angle_4)
 ##angle_p5 = ANGLEPARSE.angle_parser(angle_5)
 ##angle_p6 = ANGLEPARSE.angle_parser(angle_6)
-with open(parsed_log_file, 'r') as file:
-    stringdicts = file.readlines()
-    res = []
-    for stringdict in stringdicts:
-        newdict = ast.literal_eval(stringdict)
-        newdict['Motor encoder'] = float(newdict['Motor encoder'])
-        res.append(newdict)
+##with open(parsed_log_file, 'r') as file:
+##    stringdicts = file.readlines()
+##    res = []
+##    for stringdict in stringdicts:
+##        newdict = ast.literal_eval(stringdict)
+##        newdict['Motor encoder'] = float(newdict['Motor encoder'])
+##        res.append(newdict)
 ##res = ANGLEPARSE.merge(angle_p4,lidar_p4) #This line takes the angle values and merges them with the lidar values.
 i=0
 lenres = len(res)
 print("Successfully parsed the scan! Now removing empty messages and sorting scans by frames...")
-while i<lenres:
-# These are only included so that RANSAC can run its sampling algorithm
-#angle_increment = np.radians(res[index]['Angular Increment']) #for when the angle increment value is returned correctly by the parser
-#
-#This for loop will simulate receiving a continuous stream of scans from the LIDAR
-    if res[i]['Angular Increment']=='' or res[i]['Quantity']!=len(res[i]['Measurement']): #sometimes, the dynamic scan returns blank dictionary. this removes it
-        del res[i]
-        lenres = len(res)
-    else:
-        i += 1
-        
+##while i<lenres:
+### These are only included so that RANSAC can run its sampling algorithm
+###angle_increment = np.radians(res[index]['Angular Increment']) #for when the angle increment value is returned correctly by the parser
+###
+###This for loop will simulate receiving a continuous stream of scans from the LIDAR
+##    if res[i]['Angular Increment']=='' or res[i]['Quantity']!=len(res[i]['Measurement']): #sometimes, the dynamic scan returns blank dictionary. this removes it
+##        del res[i]
+##        lenres = len(res)
+##    else:
+##        i += 1
+##        
 frame = []
 for i in range(0, len(res), 1):
     frame.append(res[i])
 
-xk_1 = np.asarray([[RANSAC.calculateQ(frame[0]['Motor encoder']*np.pi/180,np.pi/2)],[RANSAC.calculateQ(frame[0]['Motor encoder']*np.pi/180,0)],[0]])
-Pk_1 = np.eye(3)
-tk_1 = frame[0]['Time of transmission']
-frame[0]['Euler'] = xk_1
-
-error = [0]
-errorphi = [0]
-errortheta = [0]
-errorpsi = [0]
-Pnorm = [1]
-Qk = np.diag([100, 100, 100])
-Rk = np.diag([1, 1, 1])
+error = []
+errorphi = []
+errortheta = []
+errorpsi = []
+Pnorm = []
+Qk = eval(frame[0]['Qk'])
+Rk = eval(frame[0]['Rk'])
 
 for i in range(1,len(frame),1):
-    theta_m = frame[i]['Motor encoder']*np.pi/180
-    omega = [[frame[i]['Gx']],[frame[i]['Gy']],[frame[i]['Gz']]]
-    dt = frame[i]['Time of transmission']-tk_1
-    (xk, Pk) = KALMAN.KALMAN(xk_1, Pk_1, theta_m, omega, dt, Qk, Rk)
-    xk_1 = xk
-    Pk_1 = Pk
-    errorvec = xk-KALMAN.Gravity([[frame[i]['Ax']],[frame[i]['Ay']],[frame[i]['Az']]])
+    x = eval(frame[i]['euler'])
+    P = eval(frame[i]['P'])
+    
+    errorvec = x-np.asarray(KALMAN.Gravity([[float(frame[i]['Ax'])],[float(frame[i]['Ay'])],[float(frame[i]['Az'])]]))
     errorphi.append(errorvec[0])
     errortheta.append(errorvec[1])
     errorpsi.append(errorvec[2])
     error.append(np.linalg.norm(errorvec))
-    Pnorm.append(np.linalg.norm(Pk))
-    tk_1 = frame[i]['Time of transmission']
-    frame[i]['Euler'] = xk
-    print(Pk)
+    Pnorm.append(np.linalg.norm(P))
+    print(P)
 ##    print(dt)
-##kalmanscan = RANSAC.ConvertToCartesianEulerAngles(frame)
+kalmanscan = RANSAC.ConvertToCartesianEulerAngles(frame)
 ##scan = RANSAC.ConvertToCartesian(frame)
 ##lenscan = len(scan)
 indices = range(0,len(error),1)
+plt.figure()
 plt.plot(indices,error, indices, errorphi, indices, errortheta, indices, errorpsi, indices, Pnorm)
 plt.legend(("norm", "phi", "theta", "psi", "P_Norm"))
+plt.title(DATABASE+" Error")
 plt.show()
-
+plt.savefig("..\\..\\..\\"+DATABASE)
 
 
 #for plotting the points later
