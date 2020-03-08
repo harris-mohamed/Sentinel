@@ -48,12 +48,13 @@ long oldPosition_motorRight  = -999;
 long oldPosition_motorLeft  = -999;
 long oldPosition_motorMech  = -999; 
 float rev_count_motorRight, rev_count_motorLeft, rev_count_motorMech;
-double  newPosition_motorLeft, newPosition_motorRight, newPosition_motorMech;
+double newPosition_motorLeft, newPosition_motorRight, newPosition_motorMech;
 float deg_motorRight, deg_motorLeft, def_motorMech, deg; 
 float motorLeft_init, motorRight_init, motorMech_init;
 unsigned long t; 
 char receivedMessage[NUM_CHARS];
 bool newData = false; 
+bool sendFlag = false;
 
 double Setpoint, actual_rpm, Output; 
 PID myPID(&newPosition_motorMech, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
@@ -61,7 +62,7 @@ PID myPID(&newPosition_motorMech, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 /* ----------------------------------------------------------
        FUNCTIONS
    ---------------------------------------------------------- */
-float angle_calc(float rev_c);
+float angle_calc(double rev_c);
 unsigned char EEPROM_read(int index);
 void EEPROM_clear();
 void EEPROM_write(int index, int val);
@@ -220,8 +221,10 @@ void loop() {
   recvFromRPI();
   replyToRPI();
 
-  if (SetPoint <= newPosition_motorMech){
+  if (Setpoint - newPosition_motorMech < 10 && sendFlag == true){
+      Setpoint = newPosition_motorMech;
       anothaReplyToRPI();
+      sendFlag = false;
   }
 }
 
@@ -279,7 +282,7 @@ void EEPROM_write(int index, int val) {
    Inputs:        The number of revolutions passed
    Outputs:       The number of degrees turned
    ---------------------------------------------------------- */
-float angle_calc(float rev_c) {
+float angle_calc(double rev_c) {
   int round_ = (int) rev_c;
 
   deg = abs(rev_c - round_) * REV;
@@ -339,6 +342,7 @@ void recvFromRPI(){
 void replyToRPI(){
   if (newData == true){
       if (receivedMessage[0] == 'g'){
+        sendFlag = true;
         Setpoint += 108.0;
       }
       Serial.print("<");
@@ -362,5 +366,9 @@ void replyToRPI(){
 void anothaReplyToRPI(){
   Serial.print("<");
   Serial.print("D");
+  Serial.print(" ");
+  Serial.print(angle_calc(newPosition_motorMech / 1080.00));
+//   Serial.print(" ");
   Serial.print(">");
+//   delay(500);
 }
