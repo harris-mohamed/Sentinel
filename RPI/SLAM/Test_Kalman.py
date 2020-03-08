@@ -22,9 +22,9 @@ N = 100 #Max number of trials in RANSAC before ending
 S = 50 #Number of points to sample for RANSAC
 S_LIM = 100 #mm, half the length of a side of the cube to draw around the randomly sampled point in RANSAC
 
-DATABASE = "kalman_10v1"
+DATABASE = "hallway_scan_3-8-2020"
 
-res = quick.readFromAWS("kalman_10v1")
+res = quick.readFromAWS(DATABASE)
 print(res[0].keys())
 LSRP_list = []
 # Log file locations 
@@ -102,6 +102,12 @@ error = []
 errorphi = []
 errortheta = []
 errorpsi = []
+A_psi = []
+A_phi = []
+A_theta = []
+Ax = []
+Ay = []
+Az = []
 Pnorm = []
 Qk = eval(frame[0]['Qk'])
 Rk = eval(frame[0]['Rk'])
@@ -109,25 +115,34 @@ Rk = eval(frame[0]['Rk'])
 for i in range(1,len(frame),1):
     x = eval(frame[i]['euler'])
     P = eval(frame[i]['P'])
-    
-    errorvec = x-np.asarray(KALMAN.Gravity([[float(frame[i]['Ax'])],[float(frame[i]['Ay'])],[float(frame[i]['Az'])]]))
-    errorphi.append(errorvec[0])
-    errortheta.append(errorvec[1])
-    errorpsi.append(errorvec[2])
-    error.append(np.linalg.norm(errorvec))
+    acc = [[float(frame[i]['Ax'])],[float(frame[i]['Ay'])],[float(frame[i]['Az'])]]
+    A = KALMAN.Gravity(acc)
+    Ax.append(acc[0][0])
+    Ay.append(acc[1][0])
+    Az.append(acc[2][0])
+    A_psi.append(A[2])
+    A_phi.append(A[0])
+    A_theta.append(A[1])
+    errorvec = x-A
+    errorphi.append(x[0])
+    errortheta.append(x[1])
+    errorpsi.append(x[2])
+    error.append(np.linalg.norm(x))
     Pnorm.append(np.linalg.norm(P))
-    print(P)
+##    print(P)
 ##    print(dt)
-kalmanscan = RANSAC.ConvertToCartesianEulerAngles(frame)
+##kalmanscan = RANSAC.ConvertToCartesianEulerAngles(frame)
 ##scan = RANSAC.ConvertToCartesian(frame)
 ##lenscan = len(scan)
 indices = range(0,len(error),1)
 plt.figure()
 plt.plot(indices,error, indices, errorphi, indices, errortheta, indices, errorpsi, indices, Pnorm)
 plt.legend(("norm", "phi", "theta", "psi", "P_Norm"))
-plt.title(DATABASE+" Error")
-plt.show()
-plt.savefig("..\\..\\..\\"+DATABASE)
+##plt.plot(indices,Ax, indices, Ay, indices,Az)
+##plt.legend(("x","y","z"))
+plt.title(DATABASE+" Orientation")
+##plt.show()
+plt.savefig("..\\..\\..\\"+DATABASE+".png", quality=100)
 
 
 #for plotting the points later
