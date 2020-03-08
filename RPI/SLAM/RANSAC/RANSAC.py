@@ -5,6 +5,7 @@ import numpy as np
 # import scipy.ndimage as spim
 import time
 import matplotlib.pyplot as plt
+from numpy import array
 from mpl_toolkits.mplot3d import Axes3D
 
 ###################################################################################################################################################################
@@ -239,16 +240,16 @@ def ConvertToCartesianEulerAngles(res, x=[[0.0],[0.0],[0.0]]):
 ##                start = res[index]['Time of transmission']
 ##            message_time = res[index]['Time of transmission']
 ##            time_since_start = message_time-start
-            message_count = res[index]['Quantity']
-            angle_increment = np.radians(res[index]['Angular Increment'])
-            start_angle = np.radians(res[index]['Start Angle'])
-            range_data = res[index]['Measurement']
+            message_count = int(res[index]['Quantity'])
+            angle_increment = np.radians(float(res[index]['Angular Increment']))
+            start_angle = np.radians(float(res[index]['Start Angle']))
+            range_data = eval(res[index]['Measurement'])
             end_angle = start_angle + (message_count-1)*angle_increment
 ##            theta = GetSensorEncoderData() #for when we have the arduino hooked up to the encoder, make sure it is in radians
 ##            theta = omega*time_since_start #the assignment here is just for visualization
-            theta = np.radians(res[index]['Motor encoder'])
+##            theta = np.radians(res[index]['Motor encoder'])
 ##            print("Index is "+str(index))
-            euler = res[index]['Euler']
+            euler = eval(res[index]['euler'])
             phi = euler[0][0]
             theta = euler[1][0]
             psi = euler[2][0]
