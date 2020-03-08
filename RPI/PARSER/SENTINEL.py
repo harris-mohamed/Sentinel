@@ -618,7 +618,7 @@ class SENTINEL:
             parse = arduinoReply.split(" ")
 
             if len(parse) != 1 and parse[0] == 'D':
-                time.sleep(1)
+                time.sleep(1.5)
                 actualTime = time.time()
                 self.counter = self.counter + 1 
                 scan = self.single_parse()
