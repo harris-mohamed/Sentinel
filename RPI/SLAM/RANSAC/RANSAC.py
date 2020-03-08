@@ -186,19 +186,19 @@ def ConvertToCartesian(res, x=[[0.0],[0.0],[0.0]]):
     offset = 0
 ##    omega = np.pi/3 #radians per second, this variable is the angular frequency of the motor from the video. for testing purposes only.
     for index in range(0, len(res)):
-        if len(res[index]['Measurement'])!=0:
+        if len(eval(res[index]['Measurement']))!=0:
 ##            if index==0:
 ##                start = res[index]['Time of transmission']
 ##            message_time = res[index]['Time of transmission']
 ##            time_since_start = message_time-start
-            message_count = res[index]['Quantity']
-            angle_increment = np.radians(res[index]['Angular Increment'])
-            start_angle = np.radians(res[index]['Start Angle'])
-            range_data = res[index]['Measurement']
+            message_count = int(res[index]['Quantity'])
+            angle_increment = np.radians(float(res[index]['Angular Increment']))
+            start_angle = np.radians(float(res[index]['Start Angle']))
+            range_data = eval(res[index]['Measurement'])
             end_angle = start_angle + (message_count-1)*angle_increment
 ##            theta = GetSensorEncoderData() #for when we have the arduino hooked up to the encoder, make sure it is in radians
 ##            theta = omega*time_since_start #the assignment here is just for visualization
-            theta = np.radians(res[index]['Motor encoder'])
+            theta = np.radians(float(res[index]['Motor encoder']))
             q_0 = calculateQ(theta, 0)
             q_90 = calculateQ(theta, np.pi/2)
 ##            print("Index is "+str(index))
