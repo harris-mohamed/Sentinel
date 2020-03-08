@@ -17,6 +17,7 @@ import sys
 import socket
 import time
 import struct
+from numpy import array
 import numpy as np
 
 # RPI specific imports
@@ -381,8 +382,12 @@ class SENTINEL:
                 'Start Angle': str(telegram['Start Angle']),
                 'Angular Increment': str(telegram['Angular Increment']),
                 'Quantity': str(telegram['Quantity']),
-                # 'Motor encoder': str(telegram['Motor encoder']),
+                'Motor encoder': telegram['Motor encoder'],
                 'Timestamp': str(telegram['Timestamp']),
+                'Rk': (telegram['Rk']).__repr__(),
+                'Qk': (telegram['Qk']).__repr__(), 
+                'P':  (telegram['P']).__repr__(),
+                'euler': (telegram['euler']).__repr__(),
                 'Ax': str(telegram['Ax']),
                 'Ay': str(telegram['Ay']),
                 'Az': str(telegram['Az']),
@@ -595,7 +600,7 @@ class SENTINEL:
         actualTime = time.time() 
 
         self.P = np.eye(3)
-        self.Qk = np.diag([100, 100, 100])
+        self.Qk = np.diag([s.QK_VAL, s.QK_VAL, s.QK_VAL])
         self.Rk = np.diag([1, 1, 1])
         self.counter = 0
         self.sendToArduino('g')
@@ -603,7 +608,7 @@ class SENTINEL:
         while True:
             # k = cv2.waitKey(1) & 0xFF
             self.A = self.accel_read()
-            kalman.Predict(self.x , self.P, [[self.A[3]], [self.A[4]], [self.A[5]]], time.time() - actualTime, self.Qk) #This line should read the gyroscope while the motor is spinning
+            self.x, self.P = kalman.Predict(self.x , self.P, [[self.A[3]], [self.A[4]], [self.A[5]]], time.time() - actualTime, self.Qk) #This line should read the gyroscope while the motor is spinning
             actualTime = time.time()
             
             # if k == q:
@@ -613,17 +618,20 @@ class SENTINEL:
             parse = arduinoReply.split(" ")
 
             if len(parse) != 1 and parse[0] == 'D':
-                time.sleep(1)
-                theta_motor = 1#This line needs to be the value from the motor encoder that the arduino sends to the RPi.
-                kalman.Correct(self.x , self.P, theta_motor, self.Rk) #When the scan is about to be taken, this line should be executed.
+                time.sleep(1.5)
                 actualTime = time.time()
                 self.counter = self.counter + 1 
                 scan = self.single_parse()
+                scan['Motor encoder'] = parse[1]
+                theta_motor = (np.pi * (float(scan['Motor encoder']))) / 180.00 #This line needs to be the value from the motor encoder that the arduino sends to the RPi.
+                self.x, self.P = kalman.Correct(self.x , self.P, theta_motor, self.Rk) #When the scan is about to be taken, this line should be executed.
                 scan['Rk'] = self.Rk
                 scan['Qk'] = self.Qk 
                 scan['P'] = self.P
-                scan['Motor Encoder'] = parse[1]
-                uploadToAWS(self, scan, scan_name)
+                scan['euler'] = self.x
+                # if (parse[1] == ''):
+                #     scan['Motor Encoder'] = 'None'
+                self.uploadToAWS(scan, scan_name)
                 # time.sleep(1)
                 self.sendToArduino('g')
                 # print(self.counter)
