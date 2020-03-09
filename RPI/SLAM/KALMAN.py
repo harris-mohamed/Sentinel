@@ -72,8 +72,11 @@ def Gravity(acc):
     ax = acc[0][0]
     ay = acc[1][0]
     az = acc[2][0]
-    phi = np.arctan2(-ay,az)
-    theta = np.arctan2(ax*np.sin(phi),ay)
+    phi = -np.arctan(ay/az)
+    if ay!=0:
+        theta = np.arctan(ax*np.sin(phi)/ay)
+    elif ax>0: theta=np.pi/2
+    else: theta = -np.pi/2
     psi = 0
     xk_estimate = np.asarray([[phi],[theta],[psi]])
     return(xk_estimate)
