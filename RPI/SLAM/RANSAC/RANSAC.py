@@ -33,6 +33,7 @@ def calculateQ(theta, phi):
     #SKIP, a boolean used to tell RANSAC whether or not to skip the current sample of points. Only used if the sample is not large enough to calculate a plane.
 def SampleUnassociatedPointsCartesian(values, S_LIM, S):
     SKIP = False
+    
     valuelen = len(values)
     randIndex = int(np.random.randint(0, valuelen, 1)) #This selects a tuple from the keys list, holding the Cartesian coordinates for a point
     randPoint = values[randIndex]
@@ -49,9 +50,10 @@ def SampleUnassociatedPointsCartesian(values, S_LIM, S):
     while len(sample)<S and trycount<100*S:
         indexattempt = int(np.random.randint(0,valuelen, 1)) #pick a random index for keys
         #print(keyattempt)
-        valueattempt = values[indexattempt]
+        valueattempt = tuple(values[indexattempt])
         #Check that the point is within the phi-angle bounds
         Xcheck = (valueattempt[0]<upperboundX and valueattempt[0]>lowerboundX)
+        
         #Check that the point is within the q-angle bounds and is not on the same scan-plane as the random point
         Ycheck = (valueattempt[1]<upperboundY and valueattempt[1]>lowerboundY)
         #Check that the point is within the radius bounds
