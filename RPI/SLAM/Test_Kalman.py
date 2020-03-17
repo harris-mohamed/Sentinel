@@ -108,12 +108,18 @@ A_theta = []
 Ax = []
 Ay = []
 Az = []
+x_phi = []
+x_theta = []
+x_psi = []
 Pnorm = []
 Qk = eval(frame[0]['Qk'])
 Rk = eval(frame[0]['Rk'])
 
 for i in range(1,len(frame),1):
     x = eval(frame[i]['euler'])
+    x_phi.append(x[0][0])
+    x_theta.append(x[1][0])
+    x_psi.append(x[2][0])
     P = eval(frame[i]['P'])
     acc = [[float(frame[i]['Ax'])],[float(frame[i]['Ay'])],[float(frame[i]['Az'])]]
     A = KALMAN.Gravity(acc)
@@ -141,13 +147,17 @@ for i in range(1,len(frame),1):
 ##lenscan = len(scan)
 indices = range(0,len(error),1)
 plt.figure()
-plt.plot(indices,error, indices, errorphi, indices, errortheta, indices, errorpsi, indices, Pnorm)
-plt.legend(("norm", "phi", "theta", "psi", "P_Norm"))
+##plt.plot(indices,A_phi, indices, x_phi, indices, A_theta, indices, x_theta)
+plt.plot(indices,Ax, indices, Ay, indices, Az)
+##plt.legend(("norm", "phi", "theta", "psi", "P_Norm"))
+plt.legend(("Ax", "Ay", "Az", ""))
 ##plt.plot(indices,A_phi, indices, A_theta, indices,A_psi)
 ##plt.legend(("Aphi","Atheta","Apsi"))
-plt.title(DATABASE+" Orientation")
-plt.show()
-##plt.savefig("..\\..\\..\\"+DATABASE+".png", quality=100)
+plt.title(DATABASE+" Accelerations Vs. Scan #")
+plt.xlabel("Scan Number")
+plt.ylabel("Acceleration [g's]")
+##plt.show()
+plt.savefig("..\\..\\..\\"+DATABASE+"Accel.png", quality=100)
 
 
 #for plotting the points later
