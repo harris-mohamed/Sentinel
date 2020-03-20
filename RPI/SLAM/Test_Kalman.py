@@ -15,6 +15,7 @@ import EKF.EKF as EKF
 import numpy as np
 import KALMAN
 import quick
+import FILTER
 ##import ANGLEPARSE
 X = 10 #mm, the maximum distance a point must be from an LSRP in RANSAC to be considered in tolerance.
 C = 800 #Consensus for RANSAC, number of points that must pass the tolerance check of the LSRP
@@ -22,10 +23,10 @@ N = 100 #Max number of trials in RANSAC before ending
 S = 50 #Number of points to sample for RANSAC
 S_LIM = 100 #mm, half the length of a side of the cube to draw around the randomly sampled point in RANSAC
 
-DATABASE = "hallway_scan_3-8-2020"
+DATABASE = "arc_test13_1"
 
 res = quick.readFromAWS(DATABASE)
-print(res[0].keys())
+##print(res[0].keys())
 LSRP_list = []
 # Log file locations 
 ##sample_logs = '../../../sample_logs/'
@@ -97,7 +98,9 @@ print("Successfully parsed the scan! Now removing empty messages and sorting sca
 frame = []
 for i in range(0, len(res), 1):
     frame.append(res[i])
-
+    
+FILTER.ButterworthAcceleration(frame,c=5)
+plt.show()
 error = []
 errorphi = []
 errortheta = []
@@ -157,7 +160,7 @@ plt.title(DATABASE+" Accelerations Vs. Scan #")
 plt.xlabel("Scan Number")
 plt.ylabel("Acceleration [g's]")
 ##plt.show()
-plt.savefig("..\\..\\..\\"+DATABASE+"Accel.png", quality=100)
+##plt.savefig("..\\..\\..\\"+DATABASE+"Accel.png", quality=100)
 
 
 #for plotting the points later
