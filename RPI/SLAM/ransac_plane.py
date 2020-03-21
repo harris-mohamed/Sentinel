@@ -12,6 +12,7 @@ from boto3.dynamodb.conditions import Key, Attr
 from subprocess import call
 import numpy as np
 import heapq
+from ast import literal_eval
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -76,13 +77,13 @@ POINTS_TO_EXPLORE = 10  # Number of points to explore
 
 points_dict = {}
 nearest_neighbors = {}
+
 count = 0
-# Loop through all points, compute normal vector for each point 
+# Loop through all points, compute normal vector for each cluster of points 
 for coordinate in actual_coordinates:
     # Explore the nearest n neighbors. Doing this without any optimizations as of now.
-    print(count)
-    if count == 811:
-        break
+    # if count == 100:
+    #     break
     count = count + 1
     actual_points = []
     actual_x = []
@@ -103,6 +104,8 @@ for coordinate in actual_coordinates:
         actual_x.append(curr_point[0])
         actual_y.append(curr_point[1])
         actual_z.append(curr_point[2])
+
+        actual_coordinates.remove(curr_point)
     
     # Find the plane classifying the 10 points 
     tmp_A = []
@@ -113,14 +116,79 @@ for coordinate in actual_coordinates:
     b = np.matrix(tmp_B).T 
     A = np.matrix(tmp_A)
     fit = (A.T * A).I * A.T * b
-
+    # print("Fit: ", fit)
+    # print("a: ", fit[0,0], "b: ", fit[1,0], "c: ", fit[2,0])
+    mag = np.sqrt(fit[0,0]**2 + fit[1,0]**2 + fit[2,0]**2)
     nearest_neighbors[str(coordinate)] = actual_points
-    points_dict[str(coordinate)] = fit
+    normalized = []
+    normalized.append((fit[0,0] / mag))
+    normalized.append((fit[1,0] / mag))
+    normalized.append((fit[2,0] / mag))
+    # points_dict[str(coordinate)] = normalized
+    points_dict[str(normalized)] = coordinate
+    # print("Normalized: ", normalized)
 
-ANGLE_LOW_THRESHOLD = 80
-# Now loop through the dictionary and average nearby normal vectors
+ANGLE_THRESHOLD = 80.0
+num_features = 0
+features = {}
+# Now loop through the dictionary and average normal vectors
+for key, value in points_dict.items():
+    found = False
+    old_key = ''
+    copy_buffer = [] 
+    avg_normal = []
+    for k, v in features.items():
+        current_normal_vector = literal_eval(key)
+        compare_normal_vector = literal_eval(k)
+        angle = np.degrees(np.arccos(current_normal_vector[0]*compare_normal_vector[0] + current_normal_vector[1]*compare_normal_vector[1] + current_normal_vector[2]*compare_normal_vector[2]))
 
+        if angle <= ANGLE_THRESHOLD:
+            # Compute the average of the normal vectors 
+            avg_x = (current_normal_vector[0] + compare_normal_vector[0]) / 2
+            avg_y = (current_normal_vector[1] + compare_normal_vector[1]) / 2
+            avg_z = (current_normal_vector[2] + compare_normal_vector[2]) / 2
+            avg_normal.append(avg_x)
+            avg_normal.append(avg_y)
+            avg_normal.append(avg_z)
 
+            copy_buffer = v.copy()
+            copy_buffer.append(avg_normal)
+            old_key = k
+            found = True 
+            break 
+    
+    if found == True:
+        features[str(avg_normal)] = copy_buffer
+        del features[old_key]
+        found = False 
+    else:
+        features[key] = [value]
+        num_features = num_features + 1
+
+print(num_features)
+
+# plt.figure()
+# ax = plt.subplot(111, projection='3d')
+# Plot the results 
+for key, value in features.items():
+    print(key)
+
+    # for coordinate in value:
+    #     current_x.append(coordinate[0])
+    #     current_y.append(coordinate[1])
+    #     current_z.append(coordinate[2])
+    
+ 
+    # ax.scatter(current_x, current_y, current_z, color='b')
+
+    # xlim = ax.get_xlim()
+    # ylim = ax.get_ylim()
+    # X,Y = np.meshgrid(np.arange(xlim[0], xlim[1]),
+    #                   np.arange(ylim[0], ylim[1]))
+    # Z = np.zeros(X.shape)
+    # for r in range(X.shape[0]):
+    #     for c in range(X.shape[1]):
+            # Z[r,c] = curr_vector[0] * X[r,c] + curr_vector[1] * Y[r,c] + curr_vector[2]
     # print(type(fit))
     # print(fit)
     # errors = b - A * fit
@@ -145,7 +213,7 @@ ANGLE_LOW_THRESHOLD = 80
     # ax.set_zlabel('z')
     # plt.show()
 
-    # break
+
 # # plt.figure()
 # # ax = plt.subplot(111, projection='3d')
 # # ax.scatter(actual_x, actual_y, actual_z, color='b') 
