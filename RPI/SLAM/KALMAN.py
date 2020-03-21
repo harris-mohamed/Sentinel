@@ -36,28 +36,6 @@ def Predict(xk_1, Pk_1, omega, dt, Qk):
     
     return(xk_newpre,Pk_newpre)
 ###################################################################################################################################################################
-#Function: Correct
-#Purpose: use readings from the motor to correct the orientation of the sensor, estimated by the gyroscope.
-#Inputs: 
-    #xk_newpre, a 3x1 numpy array that holds the predicted covariance from the gyroscope
-    #Pk_newpre, a 3x3 numpy array that holds the covariances from the prediction step
-    #theta_m, a float specifying the encoder-motor's current position, should be in radians
-    #Rk, a 3x3 numpy array that is the error matrix for the measurement
-
-#Outputs:
-    #xk_new, a 3x1 numpy array that is the new accepted orientation of the sensor
-    #Pk_new, a 3x3 numpy array that is the new covariance matrix
-def Correct(xk_newpre, Pk_newpre, theta_m, Rk):
-    yk = [[calculateQ(theta_m,np.pi/2)],[calculateQ(theta_m,0)],[0]]
-    ek = yk-xk_newpre
-    Sk = Pk_newpre + Rk
-    Lk = np.matmul(Pk_newpre,np.linalg.inv(Sk))
-    xk_new = xk_newpre + np.matmul(Lk,ek)
-##    Pk_new = Pk_newpre + np.matmul(np.matmul(Lk,Sk),np.transpose(Lk))
-    #As of Feb 29, 2020, the Pk matrix in the above explodes due to the matrix effectively experiencing a 5th power growth in its determinant, with no added error.
-    Pk_new = np.matmul((np.eye(3)-Lk),Pk_newpre)
-    return(xk_new,Pk_new)
-###################################################################################################################################################################
 #Function: Gravity
 #Purpose: use readings from the gyroscope and the mechanism encoder to estimate the current orientation of the sensor.
 #Inputs: 
@@ -87,3 +65,26 @@ if __name__=="__main__":
     omega = [[0.4],[0.4],[0.4]]
     dt = 0.1
     Gravity(xk)
+###################################################################################################################################################################
+#Function: Correct
+#Purpose: use readings from the motor to correct the orientation of the sensor, estimated by the gyroscope.
+#Inputs: 
+    #xk_newpre, a 3x1 numpy array that holds the predicted covariance from the gyroscope
+    #Pk_newpre, a 3x3 numpy array that holds the covariances from the prediction step
+    #theta_m, a float specifying the encoder-motor's current position, should be in radians
+    #Rk, a 3x3 numpy array that is the error matrix for the measurement
+
+#Outputs:
+    #xk_new, a 3x1 numpy array that is the new accepted orientation of the sensor
+    #Pk_new, a 3x3 numpy array that is the new covariance matrix
+def Correct(xk_newpre, Pk_newpre, acc, Rk):
+    yk = Gravity(acc)
+    ek = yk-xk_newpre
+    Sk = Pk_newpre + Rk
+    Lk = np.matmul(Pk_newpre,np.linalg.inv(Sk))
+    xk_new = xk_newpre + np.matmul(Lk,ek)
+##    Pk_new = Pk_newpre + np.matmul(np.matmul(Lk,Sk),np.transpose(Lk))
+    #As of Feb 29, 2020, the Pk matrix in the above explodes due to the matrix effectively experiencing a 5th power growth in its determinant, with no added error.
+    Pk_new = np.matmul((np.eye(3)-Lk),Pk_newpre)
+    return(xk_new,Pk_new)
+
