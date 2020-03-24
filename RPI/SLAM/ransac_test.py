@@ -17,10 +17,10 @@ import quick
 import RANSAC.RANSAC as ransac
 import KALMAN as kalman
 
-X = 50 #mm, the maximum distance a point must be from an LSRP in RANSAC to be considered in tolerance.
+X = 10 #mm, the maximum distance a point must be from an LSRP in RANSAC to be considered in tolerance.
 C = 1000 #Consensus for RANSAC, number of points that must pass the tolerance check of the LSRP
-N = 30 #Max number of trials in RANSAC before ending
-S = 30 #Number of points to sample for RANSAC
+N = 100 #Max number of trials in RANSAC before ending
+S = 10 #Number of points to sample for RANSAC
 S_LIM = 100 #mm, half the length of a side of the cube to draw around the randomly sampled point in RANSAC
 
 LSRP_list = []
@@ -55,9 +55,9 @@ ax.scatter(xs, ys, zs, s=1, marker='o', color='r')
 ax.set_xlabel('X')
 ax.set_ylabel('Y')
 ax.set_zlabel('Z')
-ax.set_xlim3d(-500, 500)
-ax.set_ylim3d(-1000, 3000)
+##ax.set_xlim3d(-500, 500)
+##ax.set_ylim3d(-1000, 3000)
 #    ax.set_zlim3d(-2000, 2000)
-ransac.plotLSRPs(ax, LSRP_list, ymax=7000)
+ransac.plotLSRPs(ax, LSRP_list, ymax=500)
 ax.view_init(45, -90)
 plt.show()
