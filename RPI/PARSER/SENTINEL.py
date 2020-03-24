@@ -624,7 +624,7 @@ class SENTINEL:
                 scan = self.single_parse()
                 scan['Motor encoder'] = parse[1]
                 theta_motor = (np.pi * (float(scan['Motor encoder']))) / 180.00 #This line needs to be the value from the motor encoder that the arduino sends to the RPi.
-                self.x, self.P = kalman.Correct(self.x , self.P, theta_motor, self.Rk) #When the scan is about to be taken, this line should be executed.
+                self.x, self.P = kalman.Correct(self.x , self.P, [[self.A[0]], [self.A[1]], [self.A[2]]], self.Rk) #When the scan is about to be taken, this line should be executed.
                 scan['Rk'] = self.Rk
                 scan['Qk'] = self.Qk 
                 scan['P'] = self.P
