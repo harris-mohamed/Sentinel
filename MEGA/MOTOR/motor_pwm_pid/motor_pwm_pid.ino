@@ -65,15 +65,17 @@ void loop() {
     }
   }
   cycle_revs += previous_change;
+  
   delta_t = millis()-starttime;
   if (delta_t>50) { //after every 100 milliseconds, calculate the approximate rpm
-    actual_rpm = cycle_revs*60000.0/delta_t; //revolutions per second
+    actual_rpm = cycle_revs*60000.0/delta_t; //revolutions per minute
     i=1;
     cycle_revs = 0;
     previous_change = 0;
     Setpoint = analogRead(pot)*maxRPM/1023.00;
     myPID.Compute();
   }
+  
   Serial.print(" Set Point: ");
   Serial.print(Setpoint);
   Serial.print(" (PWM: ");
