@@ -133,9 +133,7 @@ def TestTolerance(Unassociated_Points, LSRP, X):
         beta1 = LSRP[0][0]
         beta2 = LSRP[1][0]
         beta3 = LSRP[2][0]
-        beta = [[1,beta2,beta3]]
-        betanorm = np.linalg.norm(beta)
-        denominator = betanorm**2
+        denominator = np.sqrt(beta2**2+beta3**2+1)
         Tolerance_Bool = {}
         x = 0
         for key in Unassociated_Points:
@@ -143,10 +141,8 @@ def TestTolerance(Unassociated_Points, LSRP, X):
             x0 = point[0]
             y0 = point[1]
             z0 = point[2]
-            vector = [[beta1], [x0], [y0]]
-            numerator = np.dot(vector, beta) - z0
-            t = numerator/denominator
-            distance = (t*betanorm)[0][0] ##np.sqrt((t*beta2)**2 + (t*beta3)**2 + (t)**2)
+            numerator = abs(beta1 + beta2*x0 + beta3*y0 - z0)
+            distance = numerator/denominator 
             IN_TOLERANCE = abs(distance)<X
 ##            if distance<0: print("Found a negative distance value")
             Tolerance_Bool[key] = IN_TOLERANCE
