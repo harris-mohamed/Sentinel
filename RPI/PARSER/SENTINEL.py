@@ -608,7 +608,7 @@ class SENTINEL:
         while True:
             # k = cv2.waitKey(1) & 0xFF
             self.A = self.accel_read()
-            self.x, self.P = kalman.Predict(self.x , self.P, [[self.A[3]], [self.A[4]], [self.A[5]]], time.time() - actualTime, self.Qk) #This line should read the gyroscope while the motor is spinning
+            self.x, self.P = kalman.Predict(self.x , self.P, [[np.deg2rad(self.A[3])], [np.deg2rad(self.A[4])], [np.deg2rad(self.A[5])]], time.time() - actualTime, self.Qk) #This line should read the gyroscope while the motor is spinning
             actualTime = time.time()
             
             # if k == q:
