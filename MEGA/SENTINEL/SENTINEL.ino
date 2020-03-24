@@ -3,7 +3,7 @@
 
        Harris M
 
-       February 28, 2020
+       March 24, 2020
    ---------------------------------------------------------- */
 
 /* ----------------------------------------------------------
@@ -36,10 +36,11 @@
 #define PPR 1080.00 
 #define NUM_CHARS 64 
 #define LED LED_BUILTIN 
+#define RPM_CONST 60000.0
 
-#define Kp 1.55 
-#define Ki 2.5 
-#define Kd 0.35
+#define Kp 5.0 
+#define Ki 5.0
+#define Kd 0.4
 
 /* ----------------------------------------------------------
        GLOBAL ARRAYS/Variables
@@ -49,15 +50,21 @@ long oldPosition_motorLeft  = -999;
 long oldPosition_motorMech  = -999; 
 float rev_count_motorRight, rev_count_motorLeft, rev_count_motorMech;
 double newPosition_motorLeft, newPosition_motorRight, newPosition_motorMech;
-float deg_motorRight, deg_motorLeft, def_motorMech, deg; 
+double deg;
+double previous_change;
+float deg_motorRight, deg_motorLeft, def_motorMech; 
 float motorLeft_init, motorRight_init, motorMech_init;
 unsigned long t; 
+unsigned long start_time;
+unsigned long tinit = micros();
+unsigned long delta_t;
+int i;
 char receivedMessage[NUM_CHARS];
 bool newData = false; 
 bool sendFlag = false;
 
 double Setpoint, actual_rpm, Output; 
-PID myPID(&newPosition_motorMech, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
+PID myPID(&actual_rpm, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 
 /* ----------------------------------------------------------
        FUNCTIONS
@@ -118,7 +125,8 @@ void setup() {
   motorMech_init = *(float*)&motorMech_cat;
 
   // Initialize PID 
-  Setpoint = 0;
+  Setpoint = 0.00;
+  actual_rpm = 0.00;
   myPID.SetMode(AUTOMATIC);
   
 
@@ -127,6 +135,10 @@ void setup() {
 }
 
 void loop() {
+  if (i == 1){
+    start_time = micros();
+    i = 0;
+  }
   newPosition_motorLeft = motorLeft.read();
   newPosition_motorRight = motorRight.read();
   newPosition_motorMech = motorMech.read();
@@ -190,6 +202,10 @@ void loop() {
   }
 
   if (newPosition_motorMech != oldPosition_motorMech) {
+    previous_change = (newPosition_motorMech - oldPosition_motorMech)/1080.00;
+    delta_t = micros() - start_time;
+    i = 1;
+    actual_rpm = (previous_change * RPM_CONST) / delta_t;
     oldPosition_motorMech = newPosition_motorMech;
 
     rev_count_motorMech = newPosition_motorMech / 1080.00; 
@@ -340,16 +356,24 @@ void recvFromRPI(){
    Outputs:       None
    ---------------------------------------------------------- */
 void replyToRPI(){
-  if (newData == true){
-      if (receivedMessage[0] == 'g'){
-        sendFlag = true;
-        Setpoint += 108.0;
-      }
+  if (newData == true && receivedMessage[0] == 'g'){
+      sendFlag = true;
       Serial.print("<");
       Serial.print(" ");
       Serial.print(newPosition_motorMech);
       Serial.print(" ");
       Serial.print('>');
+      newData = false;
+      Setpoint = 4.00;
+    }
+    else if (newData == true && receivedMessage[0] == 's'){
+      sendFlag = true;
+      Serial.print("<");
+      Serial.print(" ");
+      Serial.print(newPosition_motorMech);
+      Serial.print(" ");
+      Serial.print('>');
+      Setpoint = 0.00;
       newData = false;
     }
     myPID.Compute(); 
