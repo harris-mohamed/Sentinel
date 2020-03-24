@@ -283,6 +283,7 @@ class SENTINEL:
         self.P = np.eye(3)
         self.Qk = np.diag([s.QK_VAL, s.QK_VAL, s.QK_VAL])
         self.Rk = np.diag([1, 1, 1])
+        scan_name = input("Enter the name for the scan: ")
 
         self.sendToArduino('g') #Tell Arduino to start spinning
 
@@ -329,6 +330,7 @@ class SENTINEL:
             
             if len(scans) == count:
                 sock.send(STOP_CONT_SCAN)
+                self.uploadToAWS(scan, scan_name)
                 self.sendToArduino('s') #Tell Arduino to stop
                 break
         return(scans)
@@ -663,7 +665,8 @@ class SENTINEL:
     
 
 sentinel = SENTINEL()
-sentinel.mainLoop(20)
+# sentinel.mainLoop(20)
+sentinel.live_parse(20)
 # actualTime = time.time()
 
 # KALMAN FILTER stuff
