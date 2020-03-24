@@ -280,16 +280,14 @@ class SENTINEL:
         sock.connect((s.IP_ADDRESS, s.PORT))
         sock.send(REQUEST_CONT_SCAN)
 
-        scan_name = input("Enter the name for the scan: ")
-
-        actualTime = time.time() 
-
         self.P = np.eye(3)
         self.Qk = np.diag([s.QK_VAL, s.QK_VAL, s.QK_VAL])
         self.Rk = np.diag([1, 1, 1])
-        
-        self.sendToArduino('g') #Tell Arduino to start rotating
 
+        self.sendToArduino('g') #Tell Arduino to start spinning
+
+        actualTime = time.time()
+        
         scans = []
         while 1:
             scan = []
@@ -297,12 +295,10 @@ class SENTINEL:
             while 1:
                 msg_orig = sock.recv(1)
                 msg = msg_orig.decode('utf-8')
-                
-                ##KALMAN PREDICT
                 self.A = self.accel_read()
                 self.x, self.P = kalman.Predict(self.x , self.P, [[np.deg2rad(self.A[3])], [np.deg2rad(self.A[4])], [np.deg2rad(self.A[5])]], time.time() - actualTime, self.Qk) #This line should read the gyroscope while the motor is spinning
                 actualTime = time.time()
-                
+
                 if msg_orig == b'\x03': 
                     scan.append(curr)
                     break
@@ -314,9 +310,6 @@ class SENTINEL:
             
             if (len(scan) < 4):
                 continue
-            
-            arduinoReply = self.recvLikeArduino()
-            parse = arduinoReply.split(" ")
 
             curr = datetime.now()
             nice_timestamp = str(curr.year) + "-" + str(curr.month) + "-" + str(curr.day) + "_" + str(curr.hour) + "-" + str(curr.minute) + "-" + str(curr.second)
@@ -324,23 +317,22 @@ class SENTINEL:
             scan.append(nice_timestamp)
 
             initial_parse = telegram_parse(scan)
-            
+
             actualTime = time.time()
-##            scan['Motor encoder'] = parse[1]
-##            theta_motor = (np.pi * (float(scan['Motor encoder']))) / 180.00 #This line needs to be the value from the motor encoder that the arduino sends to the RPi.
             self.x, self.P = kalman.Correct(self.x , self.P, [[self.A[0]], [self.A[1]], [self.A[2]]], self.Rk) #When the scan is about to be taken, this line should be executed.
             initial_parse['Rk'] = self.Rk
             initial_parse['Qk'] = self.Qk 
             initial_parse['P'] = self.P
             initial_parse['euler'] = self.x
-            
+
             scans.append(initial_parse)
             
             if len(scans) == count:
                 sock.send(STOP_CONT_SCAN)
-                self.sendToArduino('s') #Tell Arduino to stop spinning
+                self.sendToArduino('s') #Tell Arduino to stop
                 break
         return(scans)
+    
     def single_parse(self):
         """ Parses a single scan from the sensor
 
@@ -652,7 +644,6 @@ class SENTINEL:
                 self.counter = self.counter + 1 
                 scan = self.single_parse()
                 scan['Motor encoder'] = parse[1]
-                print(str(parse[1]))
                 theta_motor = (np.pi * (float(scan['Motor encoder']))) / 180.00 #This line needs to be the value from the motor encoder that the arduino sends to the RPi.
                 self.x, self.P = kalman.Correct(self.x , self.P, [[self.A[0]], [self.A[1]], [self.A[2]]], self.Rk) #When the scan is about to be taken, this line should be executed.
                 scan['Rk'] = self.Rk
