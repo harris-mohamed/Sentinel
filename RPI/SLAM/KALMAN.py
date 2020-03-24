@@ -50,7 +50,11 @@ def Gravity(acc):
     ax = acc[0][0]
     ay = acc[1][0]
     az = acc[2][0]
-    phi = -np.arctan(ay/az)
+    if az!=0:        
+        phi = -np.arctan(ay/az)
+    elif ay>0: phi=-np.pi/2
+    else: phi=np.pi/2
+    
     if ay!=0:
         theta = np.arctan(ax*np.sin(phi)/ay)
     elif ax>0: theta=np.pi/2
