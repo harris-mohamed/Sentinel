@@ -278,7 +278,7 @@ class SENTINEL:
         """
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((s.IP_ADDRESS, s.PORT))
-        sock.send(REQUEST_CONT_SCAN)
+        sock.send(s.REQUEST_CONT_SCAN)
 
         self.P = np.eye(3)
         self.Qk = np.diag([s.QK_VAL, s.QK_VAL, s.QK_VAL])
@@ -317,7 +317,7 @@ class SENTINEL:
 
             scan.append(nice_timestamp)
 
-            initial_parse = telegram_parse(scan)
+            initial_parse = self.telegram_parse(scan)
 
             actualTime = time.time()
             self.x, self.P = kalman.Correct(self.x , self.P, [[self.A[0]], [self.A[1]], [self.A[2]]], self.Rk) #When the scan is about to be taken, this line should be executed.
@@ -327,10 +327,10 @@ class SENTINEL:
             initial_parse['euler'] = self.x
 
             scans.append(initial_parse)
-            
+            print(len(scans)) 
             if len(scans) == count:
-                sock.send(STOP_CONT_SCAN)
-                self.uploadToAWS(scan, scan_name)
+                sock.send(s.STOP_CONT_SCAN)
+                # self.uploadToAWS(scan, scan_name)
                 self.sendToArduino('s') #Tell Arduino to stop
                 break
         return(scans)
@@ -666,7 +666,7 @@ class SENTINEL:
 
 sentinel = SENTINEL()
 # sentinel.mainLoop(20)
-sentinel.live_parse(20)
+sentinel.live_parse(2)
 # actualTime = time.time()
 
 # KALMAN FILTER stuff
