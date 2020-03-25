@@ -237,9 +237,9 @@ void loop() {
   recvFromRPI();
   replyToRPI();
   
-//   myPID.Compute();
-//   analogWrite(ROBOT_MOTOR_MECH_A, 0);
-//   analogWrite(ROBOT_MOTOR_MECH_B, Output);
+   myPID.Compute();
+   analogWrite(ROBOT_MOTOR_MECH_A, 0);
+analogWrite(ROBOT_MOTOR_MECH_B, Output);
 
   //if (Setpoint - newPosition_motorMech < 10 && sendFlag == true){
     //  Setpoint = newPosition_motorMech;
@@ -380,9 +380,9 @@ void replyToRPI(){
       Setpoint = 0.00;
       newData = false;
     }
-    myPID.Compute(); 
-    analogWrite(ROBOT_MOTOR_MECH_A, 0);
-    analogWrite(ROBOT_MOTOR_MECH_B, Output);
+    //myPID.Compute(); 
+    //analogWrite(ROBOT_MOTOR_MECH_A, 0);
+    //analogWrite(ROBOT_MOTOR_MECH_B, Output);
 }
 
 /* ----------------------------------------------------------
