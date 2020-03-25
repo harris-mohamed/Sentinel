@@ -325,6 +325,7 @@ class SENTINEL:
             initial_parse['Qk'] = self.Qk 
             initial_parse['P'] = self.P
             initial_parse['euler'] = self.x
+            self.uploadToAWS(initial_parse, scan_name)
 
             scans.append(initial_parse)
             print(len(scans)) 
