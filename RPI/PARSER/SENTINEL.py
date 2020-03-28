@@ -295,9 +295,7 @@ class SENTINEL:
             curr = ''
             while 1:
                 msg_orig = sock.recv(1)
-                msg = msg_orig.decode('utf-8')
-                self.A = self.accel_read()
-                self.x, self.P = kalman.Predict(self.x , self.P, [[np.deg2rad(self.A[3])], [np.deg2rad(self.A[4])], [np.deg2rad(self.A[5])]], time.time() - actualTime, self.Qk) #This line should read the gyroscope while the motor is spinning
+                msg = msg_orig.decode('utf-8')  
                 actualTime = time.time()
 
                 if msg_orig == b'\x03': 
@@ -320,6 +318,8 @@ class SENTINEL:
             initial_parse = self.telegram_parse(scan)
 
             actualTime = time.time()
+            self.A = self.accel_read()
+            self.x, self.P = kalman.Predict(self.x , self.P, [[np.deg2rad(self.A[3])], [np.deg2rad(self.A[4])], [np.deg2rad(self.A[5])]], time.time() - actualTime, self.Qk) #This line should read the gyroscope while the motor is spinning
             self.x, self.P = kalman.Correct(self.x , self.P, [[self.A[0]], [self.A[1]], [self.A[2]]], self.Rk) #When the scan is about to be taken, this line should be executed.
             initial_parse['Rk'] = self.Rk
             initial_parse['Qk'] = self.Qk 
