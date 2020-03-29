@@ -38,9 +38,9 @@
 #define LED LED_BUILTIN 
 #define RPM_CONST 60000.0
 
-#define Kp 5.0 
+#define Kp 4.0 
 #define Ki 5.0
-#define Kd 0.4
+#define Kd 0.20
 
 /* ----------------------------------------------------------
        GLOBAL ARRAYS/Variables
@@ -236,10 +236,22 @@ void loop() {
 
   recvFromRPI();
   replyToRPI();
-  
+//   Serial.print("actual_rpm: ");
+//   Serial.print(actual_rpm);
+//   Serial.print(". Setpoint: ");
+//   Serial.print(Setpoint);
+//   Serial.print(". Output: ");
+//   Serial.print(Output);
+//   Serial.println();
+//   Serial.print(actual_rpm);
+//   Serial.print(" ");
+//   Serial.print(Setpoint);
+//   Serial.print(" ");
+//   Serial.println((Output/255.0) * 4.00);
+//   Serial.print(" ");
    myPID.Compute();
    analogWrite(ROBOT_MOTOR_MECH_A, 0);
-analogWrite(ROBOT_MOTOR_MECH_B, Output);
+   analogWrite(ROBOT_MOTOR_MECH_B, Output);
 
   //if (Setpoint - newPosition_motorMech < 10 && sendFlag == true){
     //  Setpoint = newPosition_motorMech;
@@ -368,7 +380,7 @@ void replyToRPI(){
       Serial.print(" ");
       Serial.print('>');
       newData = false;
-      Setpoint = 4.00;
+      Setpoint = 7.00;
     }
     else if (newData == true && receivedMessage[0] == 's'){
       sendFlag = true;
