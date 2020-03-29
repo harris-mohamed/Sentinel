@@ -27,7 +27,7 @@ import sentinel_reference as s
 
 sys.path.append("../SLAM")
 
-import RANSAC as ransac
+import RANSAC.RANSAC as ransac
 import KALMAN as kalman
 
 class SENTINEL:
@@ -287,6 +287,7 @@ class SENTINEL:
 
         self.sendToArduino('g') #Tell Arduino to start spinning
 
+        time.sleep(20)
         actualTime = time.time()
         
         scans = []
@@ -325,6 +326,7 @@ class SENTINEL:
             initial_parse['Qk'] = self.Qk 
             initial_parse['P'] = self.P
             initial_parse['euler'] = self.x
+            initial_parse['Motor encoder'] = 0
             self.uploadToAWS(initial_parse, scan_name)
 
             scans.append(initial_parse)
@@ -667,7 +669,7 @@ class SENTINEL:
 
 sentinel = SENTINEL()
 # sentinel.mainLoop(20)
-sentinel.live_parse(2)
+sentinel.live_parse(60)
 # actualTime = time.time()
 
 # KALMAN FILTER stuff

@@ -389,6 +389,9 @@ void replyToRPI(){
       Serial.print(newPosition_motorMech);
       Serial.print(" ");
       Serial.print('>');
+      previous_change = 0;
+      start_time = 0;
+      actual_rpm = 0;
       Setpoint = 0.00;
       newData = false;
     }
