@@ -23,7 +23,7 @@ N = 100 #Max number of trials in RANSAC before ending
 S = 50 #Number of points to sample for RANSAC
 S_LIM = 100 #mm, half the length of a side of the cube to draw around the randomly sampled point in RANSAC
 
-DATABASE = "kalman_q10_1"
+DATABASE = "room_scan1_1"
 
 res = quick.readFromAWS(DATABASE)
 ##print(res[0].keys())
@@ -113,11 +113,14 @@ x_phi = []
 x_theta = []
 x_psi = []
 Pnorm = []
+time = []
 Qk = eval(frame[0]['Qk'])
 Rk = eval(frame[0]['Rk'])
-
-for i in range(1,len(frame),1):
+start_time = float(frame[0]['Time of transmission'])
+for i in range(0,len(frame),1):
     x = eval(frame[i]['euler'])
+    t = float(frame[i]['Time of transmission'])-start_time
+    time.append(t)
     x_phi.append(x[0][0])
     x_theta.append(x[1][0])
     x_psi.append(x[2][0])
@@ -148,22 +151,19 @@ for i in range(1,len(frame),1):
 ##lenscan = len(scan)
 indices = range(0,len(error),1)
 plt.figure()
-plt.plot(indices,error, indices, errorphi, indices, errortheta, indices, errorpsi, indices, Pnorm)
+plt.plot(time,error, time, errorphi, time, errortheta, time, errorpsi, time, Pnorm)
 plt.legend(("norm", "phi", "theta", "psi", "P_Norm"))
 plt.title(DATABASE+" Orientation Error vs. Scan Number")
-plt.xlabel("Scan Number")
+plt.xlabel("Time since first scan (s)")
 plt.ylabel("Angle [radians]")
-plt.ylim(-1,1)
 plt.show()
 
 plt.figure()
-plt.plot(indices,A_phi, indices, x_phi, indices, A_theta, indices, x_theta)
+plt.plot(time,A_phi, time, x_phi, time, A_theta, time, x_theta)
 plt.legend(("A_phi", "euler_phi", "A_theta", "euler_theta"))
-plt.plot(indices,A_phi, indices, A_theta, indices,A_psi)
 plt.title(DATABASE+" Orientations from Accelerometer Vs. Kalman Filter")
-plt.xlabel("Scan Number")
+plt.xlabel("Time since First scan (s)")
 plt.ylabel("Angle [radians]")
-plt.ylim(-1,1)
 plt.show()
 
 ##plt.savefig("..\\..\\..\\"+DATABASE+"Accel.png", quality=100)
