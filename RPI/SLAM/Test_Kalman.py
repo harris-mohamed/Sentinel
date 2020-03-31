@@ -23,7 +23,7 @@ N = 100 #Max number of trials in RANSAC before ending
 S = 50 #Number of points to sample for RANSAC
 S_LIM = 100 #mm, half the length of a side of the cube to draw around the randomly sampled point in RANSAC
 
-DATABASE = "room_scan1_1"
+DATABASE = "room_kalman0.01_1"
 
 res = quick.readFromAWS(DATABASE)
 ##print(res[0].keys())
@@ -156,7 +156,7 @@ plt.legend(("norm", "phi", "theta", "psi", "P_Norm"))
 plt.title(DATABASE+" Orientation Error vs. Scan Number")
 plt.xlabel("Time since first scan (s)")
 plt.ylabel("Angle [radians]")
-plt.show()
+plt.savefig("..\\..\\..\\"+DATABASE+"Error.png", quality=100)
 
 plt.figure()
 plt.plot(time,A_phi, time, x_phi, time, A_theta, time, x_theta)
@@ -164,10 +164,9 @@ plt.legend(("A_phi", "euler_phi", "A_theta", "euler_theta"))
 plt.title(DATABASE+" Orientations from Accelerometer Vs. Kalman Filter")
 plt.xlabel("Time since First scan (s)")
 plt.ylabel("Angle [radians]")
+plt.savefig("..\\..\\..\\"+DATABASE+"Orientations.png", quality=100)
+
 plt.show()
-
-##plt.savefig("..\\..\\..\\"+DATABASE+"Accel.png", quality=100)
-
 
 #for plotting the points later
 ##xsk = []
