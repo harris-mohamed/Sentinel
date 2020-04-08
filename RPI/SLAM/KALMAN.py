@@ -24,9 +24,9 @@ def Predict(xk_1, Pk_1, omega, dt, Qk):
 
     phi =xk_1[0][0]
     theta = xk_1[1][0]
-    Dk_1 = [[1, np.sin(phi)*np.tan(theta), np.cos(phi)*np.tan(theta)],
-            [0, np.cos(phi), -np.sin(phi)],
-            [0, np.sin(phi)/np.cos(theta), np.cos(phi)/np.cos(theta)]]
+    Dk_1 = [[0, np.sin(phi)*np.tan(theta), np.cos(phi)*np.tan(theta)],
+            [1, np.cos(phi), -np.sin(phi)],
+            [0, np.sin(phi), np.cos(phi)/np.cos(theta)]]
 
     Phik = np.diag([np.exp(dt),np.exp(dt),np.exp(dt)])
 ##    Phik = slp.expm(np.multiply(dt,Dk_1))
