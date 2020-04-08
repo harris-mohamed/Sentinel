@@ -257,9 +257,9 @@ def ConvertToCartesianEulerAngles(res, x=[[0.0],[0.0],[0.0]]):
             theta = euler[1][0]
             psi = euler[2][0]
 
-            Rlg = np.transpose([[np.cos(psi)*np.cos(theta), np.sin(psi)*np.cos(phi)+np.cos(psi)*np.sin(theta)*np.sin(phi), np.sin(psi)*np.sin(phi)-np.cos(psi)*np.sin(theta)*np.cos(phi)],
-                   [-np.sin(psi)*np.cos(theta), np.cos(psi)*np.cos(phi)-np.sin(psi)*np.sin(theta)*np.sin(phi), np.cos(psi)*np.sin(phi)+np.sin(psi)*np.sin(theta)*np.cos(phi)],
-                   [np.sin(theta), -np.cos(theta)*np.sin(phi), np.cos(theta)*np.cos(phi)]])
+            Rlg = np.transpose([[np.cos(psi)*np.cos(theta), -np.sin(psi)*np.cos(phi)+np.cos(psi)*np.sin(theta)*np.sin(phi), np.sin(psi)*np.sin(phi)+np.cos(psi)*np.sin(theta)*np.cos(phi)],
+                               [np.sin(psi)*np.cos(theta), np.cos(psi)*np.cos(phi)+np.sin(psi)*np.sin(theta)*np.sin(phi), -np.cos(psi)*np.sin(phi)+np.sin(psi)*np.sin(theta)*np.cos(phi)],
+                               [-np.sin(theta),              np.cos(theta)*np.sin(phi),                                     np.cos(theta)*np.cos(phi)]])
 
 
             for inc in range(0, message_count):
