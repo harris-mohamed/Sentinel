@@ -23,7 +23,7 @@ N = 100 #Max number of trials in RANSAC before ending
 S = 50 #Number of points to sample for RANSAC
 S_LIM = 100 #mm, half the length of a side of the cube to draw around the randomly sampled point in RANSAC
 
-DATABASE = "kalmanrk1000_2"
+DATABASE = "oracle1000_1"
 
 res = quick.readFromAWS(DATABASE)
 LSRP_list = []
@@ -93,7 +93,7 @@ plt.legend(("norm", "phi", "theta", "psi", "P_Norm"))
 plt.title(DATABASE+" Orientation Error vs. Time")
 plt.xlabel("Time since first scan (s)")
 plt.ylabel("Angle [radians]")
-plt.ylim(-1,1)
+plt.ylim(-1,1.5)
 plt.savefig("..\\..\\..\\"+DATABASE+"Error.png", quality=100)
 
 plt.figure()

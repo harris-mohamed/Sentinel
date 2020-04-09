@@ -523,3 +523,35 @@ def RANSAC(scan, X, C, N, S, S_LIM):
     else: print(str(c) + " Unassociated Points are left. This is less than Consensus, "+str(C))
     return(Landmarks_New, LSRP_list, Unassociated_Points)
 ###################################################################################################################################################################
+if __name__=="__main__":
+    import matplotlib.pyplot as plt
+    phi = np.pi/4
+    theta = 0
+    psi = 0
+    data = {}
+    euler = [[phi],[theta],[psi]]
+    n = 101
+    data['Quantity'] = str(n)
+    data['Angular Increment'] = str(180/n)
+    data['Start Angle'] = str(0)
+    data['euler'] = str(euler)
+    data['Measurement'] = str([100]*n)
+    res = [data]
+    scan = ConvertToCartesianEulerAngles(res)
+    xs = []
+    ys = []
+    zs = []
+    for point in scan.values():
+        xs.append(point[0])
+        ys.append(point[1])
+        zs.append(point[2])
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    ax.scatter(xs, ys, zs, s=1, marker='o', color='r')
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.set_xlim3d(-100,100)
+    ax.set_ylim3d(-100,100)
+    ax.set_xlim3d(-100,100)
+    plt.show()
