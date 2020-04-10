@@ -68,7 +68,7 @@ def distPoints(p0, p1):
     return (np.sqrt((p0[0] - p1[0])**2 + (p0[1] - p1[1])**2 + (p0[2] - p1[2])**2))
 
 # Point cloud clustering begins here 
-CLUSTER_POINTS = 10
+CLUSTER_POINTS = 1000
 clusters = {}
 normal_vectors = {}
 center_points = []
@@ -222,15 +222,14 @@ while len(center_points) != 0:
         # Find the angle between the normal vectors of the feature and the closest cluster
         angle = np.degrees(np.arccos(feature_normal[0]*closest_normal[0] + feature_normal[1]*closest_normal[1] + feature_normal[2]*closest_normal[2]))
 
-        ANGLE_THRESHOLD = 60
+        ANGLE_THRESHOLD = 70
 
         # If the conditions are met, it is combined with the current feature 
-        if (angle < ANGLE_THRESHOLD) or (angle > (180 - ANGLE_THRESHOLD)):
-            # avg_normal = [((feature_normal[0] + closest_normal[0]) / 2), ((feature_normal[1] + closest_normal[1]) / 2), ((feature_normal[2] + closest_normal[2]) / 2), ((feature_normal[3] + closest_normal[3]) / 2)]
-            # features[str(avg_normal)] = features[str(feature_normal)]
-            # features[str(avg_normal)].append(clusters[str(min_point)])
-            # del features[str(feature_normal)]
-            features[str(feature_normal)].append(clusters[str(min_point)])
+        if (angle < ANGLE_THRESHOLD):
+            avg_normal = [((feature_normal[0] + closest_normal[0]) / 2), ((feature_normal[1] + closest_normal[1]) / 2), ((feature_normal[2] + closest_normal[2]) / 2), ((feature_normal[3] + closest_normal[3]) / 2)]
+            features[str(avg_normal)] = features[str(feature_normal)]
+            features[str(avg_normal)].append(clusters[str(min_point)])
+            del features[str(feature_normal)]
             FOUND = True 
             break 
 
