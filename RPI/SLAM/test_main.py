@@ -12,16 +12,19 @@ import RANSAC.RANSAC as RANSAC
 ##import PARSER
 import EKF.EKF as EKF
 import numpy as np
+import quick
 ##import ANGLEPARSE
 X = 10 #mm, the maximum distance a point must be from an LSRP in RANSAC to be considered in tolerance.
 C = 5000 #Consensus for RANSAC, number of points that must pass the tolerance check of the LSRP
 N = 10 #Max number of trials in RANSAC before ending
 S = 1000 #Number of points to sample for RANSAC
 S_LIM = 100000 #mm, half the length of a side of the cube to draw around the randomly sampled point in RANSAC
+DATABASE = "Arc_test1_2"
 
+res = quick.readFromAWS(DATABASE)
 LSRP_list = []
 # Log file locations 
-sample_logs = '../../../sample_logs/'
+##sample_logs = '../../../sample_logs/'
 #single_scan = '../../sample_logs/Static-sweep0_11-26-19.log'
 #single_scan = '../../sample_logs/Static-sweep1_11-26-19.log'
 ##single_scan = '../../sample_logs/Static-sweep_11-26-19.log'
@@ -35,7 +38,7 @@ sample_logs = '../../../sample_logs/'
 ##lidar_6 = '../../sample_logs/attempt-6-lidar.log'
 ##angle_6 = '../../sample_logs/attempt-6.log'
 
-parsed_log_file = '2020-1-9_22-28-2-DIAGNOSTIC_RUN.txt'
+##parsed_log_file = '2020-1-9_22-28-2-DIAGNOSTIC_RUN.txt'
 ##parsed_log_file = '2020-1-9_22-42-41-NICK1.txt'
 ##parsed_log_file = '2020-1-9_22-44-47-NICK2.txt'
 ##parsed_log_file = '2020-1-9_22-53-29-LIGHTSOUT.txt'
@@ -53,20 +56,13 @@ Landmark_Positions = {1:3}
 dt1 = 0.0
 dt2 = 0.0 #In reality, these would be grabbed from the Arduino.
 
-####res = PARSER.parser(lidar_4)
-##lidar_p4 = PARSER.parser(lidar_4)
-##lidar_p5 = PARSER.parser(lidar_5)
-##lidar_p6 = PARSER.parser(lidar_6)
-##
-##angle_p4 = ANGLEPARSE.angle_parser(angle_4)
-##angle_p5 = ANGLEPARSE.angle_parser(angle_5)
-##angle_p6 = ANGLEPARSE.angle_parser(angle_6)
-with open(parsed_log_file, 'r') as file:
-    stringdicts = file.readlines()
-    res = []
-    for stringdict in stringdicts:
-        res.append(ast.literal_eval(stringdict))
-##res = ANGLEPARSE.merge(angle_p4,lidar_p4) #This line takes the angle values and merges them with the lidar values.
+
+##with open(parsed_log_file, 'r') as file:
+##    stringdicts = file.readlines()
+##    res = []
+##    for stringdict in stringdicts:
+##        res.append(ast.literal_eval(stringdict))
+
 i=0
 lenres = len(res)
 print("Successfully parsed the scan! Now removing empty messages and sorting scans by frames...")
@@ -106,7 +102,6 @@ for index in range(0, len(frames), 1):
     frame = frames[1]    
     (x, dx_sum) = EKF.UpdatePosition(x, dx_sum, dt1, dt2)
     scan = RANSAC.ConvertToCartesian(frame, x)
-##    scanfiltered = RANSAC.ConvertToCartesianMedianFilter(res, x, size=9)
     lenscan = len(scan)
     print("All "+str(lenscan)+" points have been moved to a new dictionary, now running RANSAC on frame "+str(index))
     #for plotting the points later

@@ -19,14 +19,14 @@ import KALMAN as kalman
 
 X = 10 #mm, the maximum distance a point must be from an LSRP in RANSAC to be considered in tolerance.
 C = 1000 #Consensus for RANSAC, number of points that must pass the tolerance check of the LSRP
-N = 100 #Max number of trials in RANSAC before ending
+N = 0 #Max number of trials in RANSAC before ending
 S = 10 #Number of points to sample for RANSAC
 S_LIM = 100 #mm, half the length of a side of the cube to draw around the randomly sampled point in RANSAC
 
 LSRP_list = []
-
-dynamodb = boto3.resource('dynamodb', region_name='us-east-2', endpoint_url='http://dynamodb.us-east-2.amazonaws.com')
-table = dynamodb.Table('SENTINEL')
+##
+##dynamodb = boto3.resource('dynamodb', region_name='us-east-2', endpoint_url='http://dynamodb.us-east-2.amazonaws.com')
+##table = dynamodb.Table('SENTINEL')
 
 scan_kalman = quick.readFromAWS('hallway_scan_3-8-2020')
 
