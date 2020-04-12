@@ -223,6 +223,25 @@ def ConvertToCartesian(res, x=[[0.0],[0.0],[0.0]]):
             continue
     return(scan)
 ###############################################################################################################################################################
+#Function: Rotate
+#Purpose: returns rotation matrix of a certain angle about an axis. For transformation matrix of data in ConvertCartesian
+#Inputs:
+    #angle, the angle of rotation in radians
+    #axis, a 3x1 numpy array that represents a vector, about which the rotation occurs. Must be a unit vector
+#Outputs:
+    #scan, a dictionary containing all the points for a single scan, in the global coordinate system.
+def Rotate(angle, axis):
+    v1 = axis[0][0]
+    v2 = axis[1][0]
+    v3 = axis[2][0]
+    cp = np.cos(angle)
+    sp = np.sin(angle)
+    
+    rotation = [[v1**2+(1-v1**2)*cp, (1-cp)*v1*v2-v3*sp, (1-cp)*v1*v3+v2*sp],
+                [(1-cp)*v1*v2+v3*sp, v2**2+(1-v2**2)*cp, (1-cp)*v2*v3-v1*sp],
+                [(1-cp)*v1*v3-v2*sp, (1-cp)*v2*v3+v1*sp, v3**2+(1-v3**2)*cp]]
+    return(np.asarray(rotation))
+###############################################################################################################################################################
 #Function: ConvertToCartesianEulerAngles
 #Purpose: to convert a single scan's values into the global csys' cartesian coordinate system, taking into account the robots current pose
 #Inputs:
@@ -257,9 +276,15 @@ def ConvertToCartesianEulerAngles(res, x=[[0.0],[0.0],[0.0]]):
             theta = euler[1][0]
             psi = euler[2][0]
 
-            Rlg = np.transpose([[np.cos(psi)*np.cos(theta), -np.sin(psi)*np.cos(phi)+np.cos(psi)*np.sin(theta)*np.sin(phi), np.sin(psi)*np.sin(phi)+np.cos(psi)*np.sin(theta)*np.cos(phi)],
-                               [np.sin(psi)*np.cos(theta), np.cos(psi)*np.cos(phi)+np.sin(psi)*np.sin(theta)*np.sin(phi), -np.cos(psi)*np.sin(phi)+np.sin(psi)*np.sin(theta)*np.cos(phi)],
-                               [-np.sin(theta),              np.cos(theta)*np.sin(phi),                                     np.cos(theta)*np.cos(phi)]])
+            Rphi = Rotate(phi,[[1],[0],[0]])
+            Rtheta = Rotate(theta,[[0],[1],[0]])
+            Rpsi = Rotate(psi,[[0],[0],[1]])
+
+            Rlg = np.matmul(Rphi,np.matmul(Rtheta,Rpsi))
+            
+##            Rlg = np.transpose([[np.cos(psi)*np.cos(theta), -np.sin(psi)*np.cos(phi)+np.cos(psi)*np.sin(theta)*np.sin(phi), np.sin(psi)*np.sin(phi)+np.cos(psi)*np.sin(theta)*np.cos(phi)],
+##                               [np.sin(psi)*np.cos(theta), np.cos(psi)*np.cos(phi)+np.sin(psi)*np.sin(theta)*np.sin(phi), -np.cos(psi)*np.sin(phi)+np.sin(psi)*np.sin(theta)*np.cos(phi)],
+##                               [-np.sin(theta),              np.cos(theta)*np.sin(phi),                                     np.cos(theta)*np.cos(phi)]]) #It should be this one.
 
 
             for inc in range(0, message_count):
@@ -514,7 +539,8 @@ def RANSAC(scan, X, C, N, S, S_LIM):
                         print("NEW LANDMARK LSRP SUCCESSFULLY STORED. CONTINUING TO NEXT SAMPLE")
                 else:
                     print("CONSENSUS FAILED: CONTINUING TO NEXT SAMPLE")
-        
+            else:
+                print("Not enough points to form a plane, gathering another sample")
         c = len(Unassociated_Points)
         n += 1
         print("#####################################################")

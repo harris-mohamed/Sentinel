@@ -1,8 +1,7 @@
 #Created by: Nicholas O'Brien
 #Project Sentinel; Kalman Filter Library
-from RANSAC.RANSAC import calculateQ
 import numpy as np
-#import scipy.linalg as slp
+
 
 ###################################################################################################################################################################
 #Function: Predict
@@ -53,22 +52,21 @@ def Gravity(acc):
     if az!=0:        
         phi = -np.arctan(ay/az)
     elif ay>0: phi=-np.pi/2
+    elif ay==0: phi=0
     else: phi=np.pi/2
     
     if ay!=0:
         theta = np.arctan(ax*np.sin(phi)/ay)
     elif ax>0: theta=np.pi/2
+    elif ax==0: theta=0
     else: theta = -np.pi/2
     psi = 0
     xk_estimate = np.asarray([[phi],[theta],[psi]])
     return(xk_estimate)
 
 if __name__=="__main__":
-    xk = [[0],[0],[0]]
-    Pk = [[0,0,0],[0,0,0],[0,0,0]]
-    omega = [[0.4],[0.4],[0.4]]
-    dt = 0.1
-    Gravity(xk)
+    A = [[1],[0],[0]]
+    print(Gravity(A))
 ###################################################################################################################################################################
 #Function: Correct
 #Purpose: use readings from the motor to correct the orientation of the sensor, estimated by the gyroscope.
