@@ -282,8 +282,8 @@ class SENTINEL:
 
         self.P = np.eye(3)
         self.Qk = np.diag([s.QK_VAL, s.QK_VAL, s.QK_VAL])
-        self.Rk = np.diag([1, 1, 1])
-        scan_name = input("Enter the name for the scan: ")
+        self.Rk = np.diag([s.RK_VAL, s.RK_VAL, s.RK_VAL])
+        # scan_name = input("Enter the name for the scan: ")
 
         self.sendToArduino('g') #Tell Arduino to start spinning
 
@@ -295,6 +295,7 @@ class SENTINEL:
             scan = []
             curr = ''
             while 1:
+                startTime = time.time()
                 msg_orig = sock.recv(1)
                 msg = msg_orig.decode('utf-8')  
                 actualTime = time.time()
@@ -310,6 +311,10 @@ class SENTINEL:
             
             if (len(scan) < 4):
                 continue
+            
+            currentTrack = (time.time() - startTime) 
+            # print("Time to get message: ", str(currentTrack // 60 % 60) + ":" + str(currentTrack % 60)) 
+            startTime = time.time()
 
             curr = datetime.now()
             nice_timestamp = str(curr.year) + "-" + str(curr.month) + "-" + str(curr.day) + "_" + str(curr.hour) + "-" + str(curr.minute) + "-" + str(curr.second)
@@ -327,9 +332,12 @@ class SENTINEL:
             initial_parse['P'] = self.P
             initial_parse['euler'] = self.x
             initial_parse['Motor encoder'] = 0
-            self.uploadToAWS(initial_parse, scan_name)
+            # self.uploadToAWS(initial_parse, scan_name)
 
             scans.append(initial_parse)
+            currentTrack = (time.time() - startTime)
+            # print("Time for everything else: ", str(currentTrack // 60 % 60) + ":" + str(currentTrack % 60))
+
             print(len(scans)) 
             if len(scans) == count:
                 sock.send(s.STOP_CONT_SCAN)
@@ -669,7 +677,11 @@ class SENTINEL:
 
 sentinel = SENTINEL()
 # sentinel.mainLoop(20)
-sentinel.live_parse(60)
+scans = sentinel.live_parse(60)
+
+scan_name = input("What is the scan name?\n")
+for scan in scans:
+  sentinel.uploadToAWS(scan, scan_name)
 # actualTime = time.time()
 
 # KALMAN FILTER stuff

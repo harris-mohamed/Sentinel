@@ -55,20 +55,19 @@ las_directory = '../../sentinel_las/'
 point_cloud_directory = '../../sentinel_pointclouds/'
 
 # Populate this with the scans we want from AWS. Verify using dynamoDB's query function
-scan_list = ['room_scan1_1', 'room_scan1_1']
+scan_list = ['arc_test1_2']
 
-count = 0
 for data_scan in scan_list: 
     # Grab the scan from AWS
     curr_scan = readFromAWS(data_scan)
-
-    # Default acceleration orientation 
-    if count == 0:
-        # Update the orientation of each scan using the accelerometer
-        for data in curr_scan:
-            data['euler'] = kalman.Gravity([[float(data['Ax'])], [float(data['Ay'])], [float(data['Az'])]]).__repr__()
-    else:
-        data_scan += '_euler'
+    data_scan += '_redux1'
+    # # Default acceleration orientation 
+    # if count == 0:
+    # Update the orientation of each scan using the accelerometer
+    for data in curr_scan:
+        data['euler'] = kalman.Gravity([[float(data['Ax'])], [float(data['Ay'])], [float(data['Az'])]]).__repr__()
+    # else:
+    #     data_scan += '_euler'
     # Get the coordinates
     curr_coordinates = ransac.ConvertToCartesianEulerAngles(curr_scan) 
 
@@ -81,10 +80,18 @@ for data_scan in scan_list:
         for key, value in curr_coordinates.items():
             for coordinate in value:
                 file.write(str(float(coordinate)) + " ")
+            
+            # Add RGB values for the color black 
+            file.write("0 0 0")
             file.write("\n")
     
+    # Add a blue point at (0, 0, 0)
+    with open(coordinate_filename, "a") as file:
+        file.write("0 0 0 0 119 190")
+    
+
     # Make the LAS file for the current file
-    os.system("./txt2las64.exe -parse xyz -set_scale 0.01 0.01 0.01 -i " + coordinate_filename + " -o " + las_filepath)
+    os.system("./txt2las64.exe -parse xyzRGB -set_scale 0.01 0.01 0.01 -i " + coordinate_filename + " -o " + las_filepath)
 
     # Make a new directory for the point cloud
     os.mkdir(point_cloud_filename)
@@ -92,7 +99,6 @@ for data_scan in scan_list:
     # Generate the point cloud for the current LAS file
     os.system("./PotreeConverter.exe " + las_filepath + " -o " + point_cloud_filename)
 
-    count = count + 1
 
     
 
