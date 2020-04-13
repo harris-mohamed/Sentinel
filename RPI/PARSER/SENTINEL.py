@@ -660,8 +660,8 @@ class SENTINEL:
             elif (curr == 'q'):
                 break 
 
-    def mainLoop(self, count):
-        """Runs the main loop of Sentinel
+    def stopAndGo(self, count):
+        """Runs the stop and go algorithm of Sentinel
 
         Args:
             count: How many scans we want
@@ -669,8 +669,7 @@ class SENTINEL:
             None
         """
 
-        scan_name = input("Enter the name for the scan: ")
-
+        scans = []
         actualTime = time.time() 
 
         self.P = np.eye(3)
@@ -680,14 +679,10 @@ class SENTINEL:
         self.sendToArduino('g')
         
         while True:
-            # k = cv2.waitKey(1) & 0xFF
             self.A = self.accel_read()
             self.x, self.P = kalman.Predict(self.x , self.P, [[np.deg2rad(self.A[3])], [np.deg2rad(self.A[4])], [np.deg2rad(self.A[5])]], time.time() - actualTime, self.Qk) #This line should read the gyroscope while the motor is spinning
             actualTime = time.time()
             
-            # if k == q:
-            #     break 
-            # else:
             arduinoReply = self.recvLikeArduino()
             parse = arduinoReply.split(" ")
 
@@ -696,23 +691,31 @@ class SENTINEL:
                 actualTime = time.time()
                 self.counter = self.counter + 1 
                 scan = self.single_parse()
-                scan['Motor encoder'] = parse[1]
-                theta_motor = (np.pi * (float(scan['Motor encoder']))) / 180.00 #This line needs to be the value from the motor encoder that the arduino sends to the RPi.
+                # scan['Motor encoder'] = parse[1]
+                # theta_motor = (np.pi * (float(scan['Motor encoder']))) / 180.00 #This line needs to be the value from the motor encoder that the arduino sends to the RPi.
                 self.x, self.P = kalman.Correct(self.x , self.P, [[self.A[0]], [self.A[1]], [self.A[2]]], self.Rk) #When the scan is about to be taken, this line should be executed.
                 scan['Rk'] = self.Rk
                 scan['Qk'] = self.Qk 
                 scan['P'] = self.P
                 scan['euler'] = self.x
-                # if (parse[1] == ''):
-                #     scan['Motor Encoder'] = 'None'
-                self.uploadToAWS(scan, scan_name)
-                # time.sleep(1)
+                scans.append(scan)
                 self.sendToArduino('g')
-                # print(self.counter)
+
                 if (self.counter == count):
+                    # Update the list of scan names
+                    currentNameHold = self.readFromAWS('NAMES')
+                    currentNames = currentNameHold[0]['list']
+                    self.deleteFromAWS('NAMES', '-1')
+                    currentNames.append(scan_name)
+
+                    scan_name = input("Enter the name for the scan: ")
+                    # Upload the AWS scans here 
+                    for scan in scans: 
+                        self.uploadToAWS(scan, scan_name)
                     break
             
 sentinel = SENTINEL()
 scans = sentinel.live_parse(60)
+scans = sentinel.stopAndGo(60)
 
 
