@@ -283,7 +283,6 @@ class SENTINEL:
         self.P = np.eye(3)
         self.Qk = np.diag([s.QK_VAL, s.QK_VAL, s.QK_VAL])
         self.Rk = np.diag([s.RK_VAL, s.RK_VAL, s.RK_VAL])
-        # scan_name = input("Enter the name for the scan: ")
 
         self.sendToArduino('g') #Tell Arduino to start spinning
 
@@ -313,7 +312,6 @@ class SENTINEL:
                 continue
             
             currentTrack = (time.time() - startTime) 
-            # print("Time to get message: ", str(currentTrack // 60 % 60) + ":" + str(currentTrack % 60)) 
             startTime = time.time()
 
             curr = datetime.now()
@@ -332,20 +330,59 @@ class SENTINEL:
             initial_parse['P'] = self.P
             initial_parse['euler'] = self.x
             initial_parse['Motor encoder'] = 0
-            # self.uploadToAWS(initial_parse, scan_name)
 
             scans.append(initial_parse)
             currentTrack = (time.time() - startTime)
-            # print("Time for everything else: ", str(currentTrack // 60 % 60) + ":" + str(currentTrack % 60))
 
             print(len(scans)) 
             if len(scans) == count:
                 sock.send(s.STOP_CONT_SCAN)
-                # self.uploadToAWS(scan, scan_name)
                 self.sendToArduino('s') #Tell Arduino to stop
+                scan_name = input("What is the scan name?\n")
+                for scan in scans:
+                    sentinel.uploadToAWS(scan, scan_name)
+
+                # Update the list of scan names
+                currentNameHold = self.readFromAWS('NAMES')
+                currentNames = currentNameHold[0]['list']
+                self.deleteFromAWS('NAMES', '-1')
+                currentNames.append(scan_name)
                 break
+
         return(scans)
     
+    def replaceAWSName(self, names):
+        """ Specialized upload to AWS function that updates names 
+
+            Args:
+                names: Array of strings to update names with
+            Return:
+                None 
+        """
+        response = self.table.put_item(
+            Item={
+                'Name': 'NAMES',
+                'Count': '-1', 
+                'list': str(names)
+            }
+        )
+
+    def deleteFromAWS(self, name, value):
+        """ Deletes an entry from the database
+
+            Args:
+                name: Name of the entry to delete
+                value: Value of the entry to delete 
+            Return:
+                None 
+        """
+        response = self.table.delete_item(
+            Key = {
+                'Name': name, 
+                'Count': value
+            }
+        )
+
     def single_parse(self):
         """ Parses a single scan from the sensor
 
@@ -506,7 +543,8 @@ class SENTINEL:
         Return:
             None
         """
-        sock = connect()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((s.IP_ADDRESS, s.PORT))
         sock.send(LOAD_FACTORY_DEFAULTS)
         scan = message_collect(sock)
 
@@ -523,7 +561,8 @@ class SENTINEL:
         Return:
             None
         """
-        sock = connect()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((s.IP_ADDRESS, s.PORT))
         sock.send(REBOOT_TEST)
         scan = message_collect(sock)
 
@@ -541,8 +580,9 @@ class SENTINEL:
             None
         """
 
-        sock = connect()
-        sock.send(SAVE_PARAMETERS_PERMANENT)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((s.IP_ADDRESS, s.PORT))
+        sock.send(s.SAVE_PARAMETERS_PERMANENT)
         scan = message_collect(sock)
         
         if (len(scan) != 3) or (scan[1] != 'mEEwriteall'):
@@ -672,66 +712,7 @@ class SENTINEL:
                 if (self.counter == count):
                     break
             
-
-    
-
 sentinel = SENTINEL()
-# sentinel.mainLoop(20)
 scans = sentinel.live_parse(60)
 
-scan_name = input("What is the scan name?\n")
-for scan in scans:
-  sentinel.uploadToAWS(scan, scan_name)
-# actualTime = time.time()
 
-# KALMAN FILTER stuff
-# P = np.eye(3)
-# Qk = np.diag([100, 100, 100])
-# Rk = np.diag([1, 1, 1])
-
-# curr = sentinel.singleScanPretty()
-# name = input("Enter a name for the current scan\n")
-# sentinel.uploadToAWS(curr, name)
-# yote = sentinel.readFromAWS('Yeet')
-# print(type(yote))
-# print(yote)
-
-# count = 0
-
-# sentinel.sendToArduino('g')
-# # LOOP
-# while True:
-
-#     arduinoReply = sentinel.recvLikeArduino()
-
-#     # print(arduinoReply)
-#     if arduinoReply != 'XXX' and arduinoReply == 'D':
-#         A = sentinel.accel_read()
-#         kalman.Predict(sentinel.x , P, [[A[3]], [A[4]], [A[5]]], time.time() - actualTime, Qk)
-#         actualTime = time.time()
-#         count = count + 1 
-#         scan = sentinel.single_parse()
-#         scan['Rk'] = Rk
-#         scan['Qk'] = Qk 
-#         scan['P'] = p
-#         # time.sleep(1)
-#         sentinel.sendToArduino('g')
-#         print(count)
-#         if (count == 6):
-#             break
-    
-    # print(arduinoReply)
-    # print(sentinel.single_parse())
-    # if (arduinoReply == 'XXX'):
-    #     print(arduinoReply)
-    #     break
-
-    # if (arduinoReply != 'XXX'):
-    #     yeet = arduinoReply.split(" ")
-    #     yeet = yeet[-2]
-    #     curr = sentinel.single_parse()
-    #     curr['Motor encoder'] = yeet
-    #     print(arduinoReply)
-    #     break
-        
-        # print(curr)
