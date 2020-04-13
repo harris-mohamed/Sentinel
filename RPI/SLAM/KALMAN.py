@@ -28,7 +28,6 @@ def Predict(xk_1, Pk_1, omega, dt, Qk):
             [0, np.sin(phi), np.cos(phi)/np.cos(theta)]]
 
     Phik = np.diag([np.exp(dt),np.exp(dt),np.exp(dt)])
-##    Phik = slp.expm(np.multiply(dt,Dk_1))
     
     xk_newpre = np.matmul(Dk_1,omega)*dt+xk_1
     Pk_newpre = np.matmul(np.matmul(Phik,Pk_1),np.linalg.inv(Phik))+Qk
@@ -81,7 +80,7 @@ if __name__=="__main__":
     #Pk_new, a 3x3 numpy array that is the new covariance matrix
 def Correct(xk_newpre, Pk_newpre, acc, Rk):
     yk = Gravity(acc)
-    ek = yk-xk_newpre
+    ek = yk-xk_newpre # difference between prediction of measurement and measurement
     Sk = Pk_newpre + Rk
     Lk = np.matmul(Pk_newpre,np.linalg.inv(Sk))
     xk_new = xk_newpre + np.matmul(Lk,ek)
