@@ -447,8 +447,8 @@ def PairLandmarks(Landmarks_New, Landmark_Positions, x, P):
 #Outputs:
     #Nothing is returned. The function only plots the plane.
     
-def plotLSRPs(figure, LSRP_list, xmin=-3000, xmax=3000, ymin=-3000, ymax=3000, alpha=0.5):
-    xx, yy = np.meshgrid(range(xmin, xmax, 10), range(ymin, ymax, 10))
+def plotLSRPs(figure, LSRP_list, xmin=-1, xmax=1, ymin=-1, ymax=1, alpha=0.5):
+    xx, yy = np.meshgrid(np.linspace(xmin, xmax, 2), np.linspace(ymin, ymax, 2))
     for LSRP in LSRP_list:
         beta1 = LSRP[0][0]
         beta2 = LSRP[1][0]
@@ -456,6 +456,29 @@ def plotLSRPs(figure, LSRP_list, xmin=-3000, xmax=3000, ymin=-3000, ymax=3000, a
         zz = beta1 + beta2*xx + beta3*yy
         #plt.hold #This is a deprecated function in more recent releases of matplotlib.pyplot. If the plane overwrites the points, try this.
         figure.plot_surface(xx, yy, zz, alpha=alpha)
+###################################################################################################################################################################
+#Function: NormalizeCartesian
+#Purpose: Normalize scan dimensions to the max dimension of the scan to make the RANSAC constants more interchangeable for different situations
+#Inputs:
+    #Points, a dictionary of points as they come out of ConvertCartesian
+    #REVERSE, a boolean which tells the function whether the normalization is meant to be undone
+    #factor, the inverse of the scaling factor when the normalization is done initially. Meant to also equal the largest dimension of the scan.
+#Outputs:
+    #Normalized_Points, a dictionary of points with scaled coordinates
+    #factor, the inverse of the scaling factor, used for undoing the normalization after RANSAC is done.
+def NormalizeCartesian(Points, REVERSE=False, factor=1.0):
+    if not REVERSE:
+        Maximum = 0
+        Normalized_Points = {}
+        for point in Points.values():
+            max_coordinate = abs(max(point))
+            if Maximum<max_coordinate:
+                Maximum=max_coordinate
+        factor=1/Maximum
+        
+    for key in Points.keys():
+        Normalized_Points[key] = np.multiply(factor,Points[key])
+    return(Normalized_Points,1/factor)
 ###################################################################################################################################################################
 #Function: RANSAC
 #Purpose: run the RANSAC algorithm on a point cloud to extract LSRP's
@@ -547,7 +570,7 @@ def RANSAC(scan, X, C, N, S, S_LIM):
     
     if n==N: print("Trial Limit of "+str(N)+" Reached")
     else: print(str(c) + " Unassociated Points are left. This is less than Consensus, "+str(C))
-    return(Landmarks_New, LSRP_list, Unassociated_Points)
+    return(Landmarks_New, LSRP_list, Unassociated_Points, Associated_Points)
 ###################################################################################################################################################################
 if __name__=="__main__":
     import matplotlib.pyplot as plt
