@@ -47,7 +47,7 @@ void loop() {
 //  Serial.println(newPosition);
   Serial.println(newPosition-Setpoint);
   analogWrite(ROBOT_MOTOR_MECH_A, 0);
-  analogWrite(ROBOT_MOTOR_MECH_B, 0); // CHANGE THIS LATER TO OUTPUT IF TESTING 
+  analogWrite(ROBOT_MOTOR_MECH_B, Output); // CHANGE THIS LATER TO OUTPUT IF TESTING 
   myPID.Compute();
   if (millis()-tinit>1000) {
       Setpoint += 108.0;
