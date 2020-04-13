@@ -351,3 +351,6 @@ dist
 #files
 *.tgz
 *.log
+
+# Stupid ignores 
+awsJS/
