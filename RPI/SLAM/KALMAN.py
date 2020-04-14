@@ -15,7 +15,7 @@ import numpy as np
 
 #NOTES:
     #The orientation of the gyroscope's axes is the following: {x' is aligned with -x_lidar, y' is aligned with y_lidar, z' is aligned with -z_lidar}
-def Predict(xk_1, omega, dt):
+def GyroIntegrate(xk_1, omega, dt):
     phi =xk_1[0][0]
     theta = xk_1[1][0]
     

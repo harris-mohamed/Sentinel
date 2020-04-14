@@ -2,7 +2,7 @@
 #Project Sentinel; RANSAC Functions
 #Created: December 7th, 2019
 import numpy as np
-import scipy.ndimage as spim
+##import scipy.ndimage as spim
 import time
 import matplotlib.pyplot as plt
 from numpy import array
