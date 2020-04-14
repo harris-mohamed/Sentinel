@@ -763,6 +763,7 @@ class SENTINEL:
                     time.sleep(0.3)
                     self.A = self.accel_read()
                     self.x = kalman.Gravity([[self.A[0]], [self.A[1]], [self.A[2]]])
+                    self.sendToArduino('g')
                     self.subcounter = 0
 
                 #I placed the if statement before to correct the orientation when necessary.    
