@@ -2,7 +2,30 @@
 #Project Sentinel; Kalman Filter Library
 import numpy as np
 
+###################################################################################################################################################################
+#Function: GyroIntegrate
+#Purpose: use readings from the gyroscope to estimate the current orientation of the sensor over time.
+#Inputs: 
+    #xk_1, a 3x1 numpy array that holds the last accepted orientation of the sensor
+    #omega, a 3x1 numpy array that is the format [[wx], [wy],[wz]] from the gyroscope
+    #dt, the time lapse between this calculation and the time at which xk_1 was last calculated.
 
+#Outputs:
+    #xk_new, a 3x1 numpy array that is the new accepted orientation of the sensor
+
+#NOTES:
+    #The orientation of the gyroscope's axes is the following: {x' is aligned with -x_lidar, y' is aligned with y_lidar, z' is aligned with -z_lidar}
+def Predict(xk_1, omega, dt):
+    phi =xk_1[0][0]
+    theta = xk_1[1][0]
+    
+    Dk_1 = [[0, np.sin(phi)*np.tan(theta), np.cos(phi)*np.tan(theta)],
+            [1, np.cos(phi), -np.sin(phi)],
+            [0, np.sin(phi), np.cos(phi)/np.cos(theta)]]
+
+    xk_new = np.matmul(Dk_1,omega)*dt+xk_1
+
+    return(xk_new)
 ###################################################################################################################################################################
 #Function: Predict
 #Purpose: use readings from the gyroscope and the mechanism encoder to estimate the current orientation of the sensor.
