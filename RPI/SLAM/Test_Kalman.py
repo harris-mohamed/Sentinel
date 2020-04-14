@@ -23,7 +23,7 @@ N = 100 #Max number of trials in RANSAC before ending
 S = 50 #Number of points to sample for RANSAC
 S_LIM = 100 #mm, half the length of a side of the cube to draw around the randomly sampled point in RANSAC
 
-DATABASE = "hallway_scan_3-8-2020"
+DATABASE = "room_contbutnotQk8_1"
 
 res = quick.readFromAWS(DATABASE)
 LSRP_list = []
@@ -67,7 +67,7 @@ for i in range(0,len(res),1):
     P = eval(res[i]['P'])
     acc = [[float(res[i]['Ax'])],[float(res[i]['Ay'])],[float(res[i]['Az'])]]
     A = KALMAN.Gravity(acc)
-    print(A,acc)
+##    print(A,acc)
     Ax.append(acc[0][0])
     Ay.append(acc[1][0])
     Az.append(acc[2][0])
@@ -95,7 +95,7 @@ plt.title(DATABASE+" Orientation Error vs. Time")
 plt.xlabel("Time since first scan (s)")
 plt.ylabel("Angle [radians]")
 plt.ylim(-1,1.5)
-##plt.savefig("..\\..\\..\\"+DATABASE+"Error.png", quality=100)
+plt.savefig("..\\..\\..\\"+DATABASE+"Error.png", quality=100)
 
 plt.figure()
 plt.plot(time,A_phi, time, x_phi, time, A_theta, time, x_theta)
@@ -104,6 +104,6 @@ plt.title(DATABASE+" Orientations from Accelerometer Vs. Kalman Filter")
 plt.xlabel("Time since First scan (s)")
 plt.ylabel("Angle [radians]")
 plt.ylim(-1,1)
-##plt.savefig("..\\..\\..\\"+DATABASE+"Orientations.png", quality=100)
+plt.savefig("..\\..\\..\\"+DATABASE+"Orientations.png", quality=100)
 
 plt.show()

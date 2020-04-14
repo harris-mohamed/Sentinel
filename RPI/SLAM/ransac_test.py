@@ -19,7 +19,7 @@ import KALMAN as kalman
 
 X = 0.005 #unitless, the maximum distance a point must be from an LSRP in RANSAC to be considered in tolerance.
 C = 500 #Consensus for RANSAC, number of points that must pass the tolerance check of the LSRP
-N = 30 #Max number of trials in RANSAC before ending
+N = 0 #Max number of trials in RANSAC before ending
 S = 10 #Number of points to sample for RANSAC
 S_LIM = 0.05 #unitless, half the length of a side of the cube to draw around the randomly sampled point in RANSAC
 
@@ -28,10 +28,10 @@ LSRP_list = []
 ##dynamodb = boto3.resource('dynamodb', region_name='us-east-2', endpoint_url='http://dynamodb.us-east-2.amazonaws.com')
 ##table = dynamodb.Table('SENTINEL')
 
-scan_kalman = quick.readFromAWS('hallway_scan_3-8-2020')
+scan_kalman = quick.readFromAWS('room_contbutnot0.5_1')
 
-for scan in scan_kalman:
-    scan['euler'] = kalman.Gravity([[float(scan['Ax'])], [float(scan['Ay'])], [float(scan['Az'])]]).__repr__()
+##for scan in scan_kalman:
+##    scan['euler'] = kalman.Gravity([[float(scan['Ax'])], [float(scan['Ay'])], [float(scan['Az'])]]).__repr__()
 
 test_coordinates = ransac.ConvertToCartesianEulerAngles(scan_kalman)
 (scaled_coordinates, factor) = ransac.NormalizeCartesian(test_coordinates)
@@ -68,9 +68,9 @@ ax.scatter(xa, ya, za, s=1, marker='x', color='b')
 ax.set_xlabel('X')
 ax.set_ylabel('Y')
 ax.set_zlabel('Z')
-ax.set_xlim3d(-1, 1)
-ax.set_ylim3d(-1, 1)
-ax.set_zlim3d(0, 1)
+##ax.set_xlim3d(-1, 1)
+##ax.set_ylim3d(-1, 1)
+##ax.set_zlim3d(0, 1)
 ransac.plotLSRPs(ax, LSRP_list)
 ax.view_init(45, -90)
 plt.show()
