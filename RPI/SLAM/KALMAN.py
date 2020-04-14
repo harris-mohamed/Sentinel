@@ -19,9 +19,9 @@ def GyroIntegrate(xk_1, omega, dt):
     phi =xk_1[0][0]
     theta = xk_1[1][0]
     
-    Dk_1 = [[0, np.sin(phi)*np.tan(theta), np.cos(phi)*np.tan(theta)],
-            [1, np.cos(phi), -np.sin(phi)],
-            [0, np.sin(phi), np.cos(phi)/np.cos(theta)]]
+    Dk_1 = [[1, np.sin(phi)*np.tan(theta), np.cos(phi)*np.tan(theta)],
+            [0, np.cos(phi), -np.sin(phi)],
+            [0, np.sin(phi)/np.cos(theta), np.cos(phi)/np.cos(theta)]]
 
     xk_new = np.matmul(Dk_1,omega)*dt+xk_1
 
