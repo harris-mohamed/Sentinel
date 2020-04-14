@@ -60,7 +60,7 @@ scan_list = ['arc_test1_2']
 for data_scan in scan_list: 
     # Grab the scan from AWS
     curr_scan = readFromAWS(data_scan)
-    data_scan += '_redux1'
+    # data_scan += '_redux1'
     # # Default acceleration orientation 
     # if count == 0:
     # Update the orientation of each scan using the accelerometer
@@ -70,7 +70,8 @@ for data_scan in scan_list:
     #     data_scan += '_euler'
     # Get the coordinates
     curr_coordinates = ransac.ConvertToCartesianEulerAngles(curr_scan) 
-
+    # (curr_coordinates, factor) = ransac.NormalizeCartesian(actual_coordinates, True, factor=1/1000)
+    
     # Define the file paths
     coordinate_filename = coordinate_directory + data_scan + ".txt"
     las_filepath = las_directory + data_scan + ".las"
@@ -91,7 +92,7 @@ for data_scan in scan_list:
     
 
     # Make the LAS file for the current file
-    os.system("./txt2las64.exe -parse xyzRGB -set_scale 0.01 0.01 0.01 -i " + coordinate_filename + " -o " + las_filepath)
+    os.system("./txt2las64.exe -parse xyzRGB -set_scale 0.001 0.001 0.001 -i " + coordinate_filename + " -o " + las_filepath)
 
     # Make a new directory for the point cloud
     os.mkdir(point_cloud_filename)

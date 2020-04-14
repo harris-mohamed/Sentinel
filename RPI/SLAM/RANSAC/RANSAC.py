@@ -2,7 +2,7 @@
 #Project Sentinel; RANSAC Functions
 #Created: December 7th, 2019
 import numpy as np
-# import scipy.ndimage as spim
+import scipy.ndimage as spim
 import time
 import matplotlib.pyplot as plt
 from numpy import array
@@ -467,9 +467,9 @@ def plotLSRPs(figure, LSRP_list, xmin=-1, xmax=1, ymin=-1, ymax=1, alpha=0.5):
     #Normalized_Points, a dictionary of points with scaled coordinates
     #factor, the inverse of the scaling factor, used for undoing the normalization after RANSAC is done.
 def NormalizeCartesian(Points, REVERSE=False, factor=1.0):
+    Normalized_Points = {}
     if not REVERSE:
         Maximum = 0
-        Normalized_Points = {}
         for point in Points.values():
             max_coordinate = abs(max(point))
             if Maximum<max_coordinate:
