@@ -727,7 +727,7 @@ class SENTINEL:
 
         scans = []
         actualTime = time.time() 
-
+        OuterloopTime = time.time()
         dt = 0.5
         stopcount = 10 #After every "stopcount" scans, stop the motor to correct for drift using kalman.gravity. Maybe this could change according to the count given.
         self.P = np.eye(3)
@@ -739,8 +739,8 @@ class SENTINEL:
         
         while True:
             self.A = self.accel_read()
-            self.x = kalman.GyroIntegrate(self.x ,[[np.deg2rad(self.A[3])], [np.deg2rad(self.A[4])], [np.deg2rad(self.A[5])]], time.time() - actualTime) #This line should read the gyroscope while the motor is spinning
-            # actualTime = time.time()
+            self.x = kalman.GyroIntegrate(self.x ,[[np.deg2rad(self.A[3])], [np.deg2rad(self.A[4])], [np.deg2rad(self.A[5])]], time.time() - OuterloopTime) #This line should read the gyroscope while the motor is spinning
+            OuterloopTime = time.time()
             
             # arduinoReply = self.recvLikeArduino()
             # parse = arduinoReply.split(" ")
@@ -750,6 +750,7 @@ class SENTINEL:
                 self.counter = self.counter + 1
                 self.subcounter = self.subcounter + 1
                 scan = self.single_parse()
+                print("Took a scan!")
                 scan['Motor encoder'] = 0
                 # theta_motor = (np.pi * (float(scan['Motor encoder']))) / 180.00 #This line needs to be the value from the motor encoder that the arduino sends to the RPi.
                 scan['Rk'] = self.Rk
@@ -758,13 +759,15 @@ class SENTINEL:
 
                 #self.sendToArduino('g')
                 #print("Took a scan!")
-                if self.subcounter >= stopcount:
-                    self.sendToArduino('s')
-                    time.sleep(0.3)
-                    self.A = self.accel_read()
-                    self.x = kalman.Gravity([[self.A[0]], [self.A[1]], [self.A[2]]])
-                    self.sendToArduino('g')
-                    self.subcounter = 0
+              #  if self.subcounter >= stopcount:
+              #      print("Stopping Arduino!")
+              #      self.sendToArduino('s')
+              #      time.sleep(1.0)
+              #      self.A = self.accel_read()
+              #      self.x = kalman.Gravity([[self.A[0]], [self.A[1]], [self.A[2]]])
+              #      self.sendToArduino('g')
+              #      print("Telling Arduino to go!")
+              #      self.subcounter = 0
 
                 #I placed the if statement before to correct the orientation when necessary.    
                 scan['euler'] = self.x
@@ -777,6 +780,7 @@ class SENTINEL:
                     # currentNames.append(scan_name)
                     # self.replaceAWSName(scan_name)
                     self.sendToArduino('s')
+                    print("About to ask for input")
                     scan_name = input("Enter the name for the scan: ")
                     self.replaceAWSName(scan_name)
                     # Upload the AWS scans here 
