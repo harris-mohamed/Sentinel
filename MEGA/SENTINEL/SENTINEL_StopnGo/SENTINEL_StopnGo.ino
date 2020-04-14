@@ -118,7 +118,7 @@ void setup() {
   motorMech_init = *(float*)&motorMech_cat;
 
   // Initialize PID 
-  Setpoint = 0;
+  Setpoint = motorMech_init;
   myPID.SetMode(AUTOMATIC);
   
 
@@ -237,11 +237,11 @@ void loop() {
    analogWrite(ROBOT_MOTOR_MECH_A, 0);
    analogWrite(ROBOT_MOTOR_MECH_B, Output);
 
-  //if (Setpoint - newPosition_motorMech < 10 && sendFlag == true){
-    //  Setpoint = newPosition_motorMech;
-     // anothaReplyToRPI();
-   //   sendFlag = false;
-  //}
+  if (Setpoint - newPosition_motorMech < 10 && sendFlag == true){
+     Setpoint = newPosition_motorMech;
+     anothaReplyToRPI();
+     sendFlag = false;
+  }
 }
 
 /*--------------------------------------------------
@@ -361,6 +361,12 @@ void replyToRPI(){
         sendFlag = true;
         Setpoint += 108.0;
       }
+      Serial.print("<");
+      Serial.print(" ");
+      Serial.print(newPosition_motorMech); 
+      Serial.print(" ");
+      Serial.print('>');
+      newData = false;
       }
     //myPID.Compute(); 
     //analogWrite(ROBOT_MOTOR_MECH_A, 0);

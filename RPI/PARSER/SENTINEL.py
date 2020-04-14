@@ -687,11 +687,11 @@ class SENTINEL:
             parse = arduinoReply.split(" ")
 
             if len(parse) != 1 and parse[0] == 'D':
-                time.sleep(1.5)
+                time.sleep(0.3)
                 actualTime = time.time()
                 self.counter = self.counter + 1 
                 scan = self.single_parse()
-                # scan['Motor encoder'] = parse[1]
+                scan['Motor encoder'] = parse[1]
                 # theta_motor = (np.pi * (float(scan['Motor encoder']))) / 180.00 #This line needs to be the value from the motor encoder that the arduino sends to the RPi.
                 self.x, self.P = kalman.Correct(self.x , self.P, [[self.A[0]], [self.A[1]], [self.A[2]]], self.Rk) #When the scan is about to be taken, this line should be executed.
                 scan['Rk'] = self.Rk
@@ -700,22 +700,82 @@ class SENTINEL:
                 scan['euler'] = self.x
                 scans.append(scan)
                 self.sendToArduino('g')
-
+                print("Took a scan!")
                 if (self.counter == count):
                     # Update the list of scan names
-                    currentNameHold = self.readFromAWS('NAMES')
-                    currentNames = currentNameHold[0]['list']
-                    self.deleteFromAWS('NAMES', '-1')
-                    currentNames.append(scan_name)
-
+                    # currentNameHold = self.readFromAWS('NAMES')
+                    # currentNames = currentNameHold[0]['list']
+                    # self.deleteFromAWS('NAMES', '-1')
+                    # currentNames.append(scan_name)
+                    # self.replaceAWSName(scan_name)
                     scan_name = input("Enter the name for the scan: ")
+                    self.replaceAWSName(scan_name)
                     # Upload the AWS scans here 
                     for scan in scans: 
                         self.uploadToAWS(scan, scan_name)
                     break
-            
-sentinel = SENTINEL()
-scans = sentinel.live_parse(60)
-scans = sentinel.stopAndGo(60)
 
+
+    def contbutnot(self, count):
+        """Runs the stop and go algorithm of Sentinel
+
+        Args:
+            count: How many scans we want
+        Return:
+            None
+        """
+
+        scans = []
+        actualTime = time.time() 
+
+        dt = 0.5
+
+        self.P = np.eye(3)
+        self.Qk = np.diag([s.QK_VAL, s.QK_VAL, s.QK_VAL])
+        self.Rk = np.diag([s.RK_VAL, s.RK_VAL, s.RK_VAL])
+        self.counter = 0
+        self.sendToArduino('g')
+        
+        while True:
+            self.A = self.accel_read()
+            self.x, self.P = kalman.Predict(self.x , self.P, [[np.deg2rad(self.A[3])], [np.deg2rad(self.A[4])], [np.deg2rad(self.A[5])]], time.time() - actualTime, self.Qk) #This line should read the gyroscope while the motor is spinning
+            # actualTime = time.time()
+            
+            # arduinoReply = self.recvLikeArduino()
+            # parse = arduinoReply.split(" ")
+
+            if time.time() - actualTime > dt:
+                # time.sleep(0.3)
+                actualTime = time.time()
+                self.counter = self.counter + 1 
+                scan = self.single_parse()
+                scan['Motor encoder'] = 0
+                # theta_motor = (np.pi * (float(scan['Motor encoder']))) / 180.00 #This line needs to be the value from the motor encoder that the arduino sends to the RPi.
+                self.x, self.P = kalman.Correct(self.x , self.P, [[self.A[0]], [self.A[1]], [self.A[2]]], self.Rk) #When the scan is about to be taken, this line should be executed.
+                scan['Rk'] = self.Rk
+                scan['Qk'] = self.Qk 
+                scan['P'] = self.P
+                scan['euler'] = self.x
+                scans.append(scan)
+                #self.sendToArduino('g')
+                #print("Took a scan!")
+                if (self.counter == count):
+                    # Update the list of scan names
+                    # currentNameHold = self.readFromAWS('NAMES')
+                    # currentNames = currentNameHold[0]['list']
+                    # self.deleteFromAWS('NAMES', '-1')
+                    # currentNames.append(scan_name)
+                    # self.replaceAWSName(scan_name)
+                    self.sendToArduino('s')
+                    scan_name = input("Enter the name for the scan: ")
+                    self.replaceAWSName(scan_name)
+                    # Upload the AWS scans here 
+                    for scan in scans: 
+                        self.uploadToAWS(scan, scan_name)
+                    break
+
+sentinel = SENTINEL()
+# scans = sentinel.live_parse(60)
+# scans = sentinel.stopAndGo(20)
+scans = sentinel.contbutnot(40)
 
