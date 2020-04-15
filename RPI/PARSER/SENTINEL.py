@@ -739,7 +739,7 @@ class SENTINEL:
         
         while True:
             self.A = self.accel_read()
-            self.x = kalman.GyroIntegrate(self.x ,[[np.deg2rad(self.A[3])], [np.deg2rad(self.A[4])], [np.deg2rad(self.A[5])]], time.time() - OuterloopTime) #This line should read the gyroscope while the motor is spinning
+            self.x = kalman.GyroIntegrate(self.x ,[[-np.deg2rad(self.A[3])], [np.deg2rad(self.A[4])], [-np.deg2rad(self.A[5])]], time.time() - OuterloopTime) #This line should read the gyroscope while the motor is spinning
             OuterloopTime = time.time()
             
             # arduinoReply = self.recvLikeArduino()
